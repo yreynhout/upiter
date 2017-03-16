@@ -1,0 +1,16 @@
+source https://www.nuget.org/api/v2
+framework: net46
+
+nuget FAKE
+nuget FSharp.Control.AsyncSeq
+nuget FSharp.Core
+nuget Newtonsoft.Json
+nuget Newtonsoft.Json.Schema
+nuget NodaTime
+nuget Serilog
+nuget Serilog.Extras.FSharp
+nuget Serilog.Sinks.Async
+nuget Serilog.Sinks.ColoredConsole
+nuget Serilog.Sinks.File
+nuget SqlStreamStore
+nuget Suave
