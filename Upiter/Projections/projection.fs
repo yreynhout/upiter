@@ -10,37 +10,37 @@ namespace Upiter.Projections
         type GroupAccessibility = Private = 0 | Public = 1
         type MembershipInvitationPolicy =
             {
-                AllowMembersToInvite: Boolean
-                AllowModeratorsToInvite: Boolean
-                AllowOwnersToInvite: Boolean
+                AllowMembersToInvite    : Boolean
+                AllowModeratorsToInvite : Boolean
+                AllowOwnersToInvite     : Boolean
             }
         type GroupDocument = 
             {
-                TenantId: Int32
-                GroupId: Guid
-                Name: String
-                Purpose: String
-                StartedById: Guid
-                Accessibility: GroupAccessibility
-                MembershipInvitationPolicy: MembershipInvitationPolicy
+                TenantId                   : Int32
+                GroupId                    : Guid
+                Name                       : String
+                Purpose                    : String
+                StartedById                : Guid
+                Accessibility              : GroupAccessibility
+                MembershipInvitationPolicy : MembershipInvitationPolicy
             }
         
         type private ProjectionEvents =
-        | PublicGroupWasStarted of PublicGroupWasStarted
-        | PrivateGroupWasStarted of PrivateGroupWasStarted
-        | GroupWasRenamed of GroupWasRenamed
-        | GroupInformationWasChanged of GroupInformationWasChanged
+        | PublicGroupWasStarted                 of PublicGroupWasStarted
+        | PrivateGroupWasStarted                of PrivateGroupWasStarted
+        | GroupWasRenamed                       of GroupWasRenamed
+        | GroupInformationWasChanged            of GroupInformationWasChanged
         | GroupMembershipInvitationPolicyWasSet of GroupMembershipInvitationPolicyWasSet
-        | GroupWasDeleted of GroupWasDeleted
+        | GroupWasDeleted                       of GroupWasDeleted
         with 
             static member FromEnvelope (envelope: Envelope) =
                 match envelope.Message with
-                | :? PublicGroupWasStarted as msg -> Some (PublicGroupWasStarted msg)
-                | :? PrivateGroupWasStarted as msg -> Some (PrivateGroupWasStarted msg)
-                | :? GroupWasRenamed as msg -> Some (GroupWasRenamed msg)
-                | :? GroupInformationWasChanged as msg -> Some (GroupInformationWasChanged msg)
+                | :? PublicGroupWasStarted                 as msg -> Some (PublicGroupWasStarted msg)
+                | :? PrivateGroupWasStarted                as msg -> Some (PrivateGroupWasStarted msg)
+                | :? GroupWasRenamed                       as msg -> Some (GroupWasRenamed msg)
+                | :? GroupInformationWasChanged            as msg -> Some (GroupInformationWasChanged msg)
                 | :? GroupMembershipInvitationPolicyWasSet as msg -> Some (GroupMembershipInvitationPolicyWasSet msg)
-                | :? GroupWasDeleted as msg -> Some (GroupWasDeleted msg)
+                | :? GroupWasDeleted                       as msg -> Some (GroupWasDeleted msg)
                 | _ -> None
 
         let instance (cache: MemoryCache) (envelope: Envelope) =

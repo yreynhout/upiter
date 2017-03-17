@@ -123,3 +123,38 @@ namespace Upiter.Messages
                 AllowOwnersToInvite: Boolean
                 When: Int64
             }
+
+        type ModerationChoice = Yes = 0 | Moderated = 1 | No = 2
+
+        [<CLIMutable>]
+        type SetGroupModerationPolicy =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                AllowPlatformGuestsToComment: ModerationChoice
+                AllowPlatformMembersToComment: ModerationChoice
+                AllowGroupMembersToComment: ModerationChoice
+                AllowPlatformMembersToPost: ModerationChoice
+                AllowGroupMembersToPost: ModerationChoice
+                RequireModerationAsOfLinkCount: Int32
+                RequireModerationAsOfImageCount: Int32
+                RequireModerationAsOfMediaCount: Int32
+            }
+
+        [<CLIMutable>]
+        type GroupModerationPolicyWasSet =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                AllowPlatformGuestsToComment: ModerationChoice
+                AllowPlatformMembersToComment: ModerationChoice
+                AllowGroupMembersToComment: ModerationChoice
+                AllowPlatformMembersToPost: ModerationChoice
+                AllowGroupMembersToPost: ModerationChoice
+                RequireModerationAsOfLinkCount: Int32
+                RequireModerationAsOfImageCount: Int32
+                RequireModerationAsOfMediaCount: Int32
+                When: Int64
+            }

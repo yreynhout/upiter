@@ -67,6 +67,7 @@ namespace Upiter.Messages
                 GroupId: Guid
                 MembershipId: Guid
                 PlatformMemberId: Guid
+                Reason: String
             }
 
         [<CLIMutable>]
@@ -76,6 +77,7 @@ namespace Upiter.Messages
                 GroupId: Guid
                 MembershipId: Guid
                 PlatformMemberId: Guid
+                Reason: String
                 When: Int64
             }
         
@@ -86,6 +88,7 @@ namespace Upiter.Messages
                 GroupId: Guid
                 MembershipId: Guid
                 PlatformMemberId: Guid
+                Reason: String
             }
         
         [<CLIMutable>]
@@ -95,6 +98,7 @@ namespace Upiter.Messages
                 GroupId: Guid
                 MembershipId: Guid
                 PlatformMemberId: Guid
+                Reason: String
                 When: Int64
             }
 

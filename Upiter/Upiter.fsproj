@@ -43,19 +43,23 @@
     <Reference Include="System.Runtime.Caching" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Messages\envelope.fs" />
+    <Compile Include="Messages/platformmember-contracts.fs" />
+    <Compile Include="Messages/membership-contracts.fs" />
+    <Compile Include="Messages/ownerinvitation-contracts.fs" />
+    <Compile Include="Messages/memberinvitation-contracts.fs" />
+    <Compile Include="Messages/moderatorinvitation-contracts.fs" />
+    <Compile Include="Messages/group-contracts.fs" />
+    <Compile Include="Messages/message-contracts.fs" />
+    <Compile Include="Messages/moderation-contracts.fs" />
+    <Compile Include="Messages/comment-contracts.fs" />
+    <Compile Include="Messages/poll-contracts.fs" />
     <Compile Include="scheduler.fs" />
-    <Compile Include="Messages\platformmember-contracts.fs" />
-    <Compile Include="Messages\membership-contracts.fs" />
-    <Compile Include="Messages\ownerinvitation-contracts.fs" />
-    <Compile Include="Messages\memberinvitation-contracts.fs" />
-    <Compile Include="Messages\moderatorinvitation-contracts.fs" />
-    <Compile Include="Messages\group-contracts.fs" />
-    <Compile Include="Messages\message-contracts.fs" />
-    <Compile Include="Model\group.fs" />
-    <Compile Include="Projections\projection.fs" />
-    <Compile Include="Projections\projectionhost.fs" />
-    <Compile Include="Projections\subscriptionhost.fs" />
+    <Compile Include="Model/model-envelope.fs" />
+    <Compile Include="Model/group.fs" />
+    <Compile Include="Projections/projection-envelope.fs" />
+    <Compile Include="Projections/projection.fs" />
+    <Compile Include="Projections/projectionhost.fs" />
+    <Compile Include="Projections/subscriptionhost.fs" />
     <Compile Include="seeding.fs" />
     <Compile Include="program.fs" />
     <None Include="App.config" />

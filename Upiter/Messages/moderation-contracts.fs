@@ -1,46 +1,9 @@
 namespace Upiter.Messages
     open System
 
-    module MessageContracts =
-        // type AutoArchiveMessage =
-        // | Never
-        // | AfterInactivityOf of Int64
-        // | AsOf of Int64
-        
-        // type AutoCloseComments =
-        // | Never
-        // | After of Int64
-        // | AsOf of Int64
-
+    module MessageModerationContracts =
         [<CLIMutable>]
-        type PostMessage =
-            {
-                TenantId: Int32
-                GroupId: Guid
-                PlatformMemberId: Guid
-                MessageId: Guid
-                Title: String
-                Body: String
-                AllowComments: Boolean
-                AllowSharing: Boolean
-            }
-
-        [<CLIMutable>]
-        type MessageWasPosted =
-            {
-                TenantId: Int32
-                GroupId: Guid
-                PlatformMemberId: Guid
-                MessageId: Guid
-                Title: String
-                Body: String
-                AllowComments: Boolean
-                AllowSharing: Boolean
-                When: Int64
-            }
-
-        [<CLIMutable>]
-        type UpvoteMessage = 
+        type FlagMessageAsInappropriate =
             {
                 TenantId: Int32
                 PlatformMemberId: Guid
@@ -48,177 +11,178 @@ namespace Upiter.Messages
             }
 
         [<CLIMutable>]
-        type MessageWasUpvoted = 
+        type MessageWasFlaggedAsInappropriate =
             {
                 TenantId: Int32
-                GroupId: Guid
                 PlatformMemberId: Guid
                 MessageId: Guid
                 When: Int64
             }
 
         [<CLIMutable>]
-        type DownvoteMessage =
+        type FlagMessageAsSpam =
             {
                 TenantId: Int32
                 PlatformMemberId: Guid
                 MessageId: Guid
+            }
+
+        [<CLIMutable>]
+        type MessageWasFlaggedAsSpam =
+            {
+                TenantId: Int32
+                PlatformMemberId: Guid
+                MessageId: Guid
+                When: Int64
+            }
+
+        [<CLIMutable>]
+        type TrustFutureGroupMemberMessages =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
             }
         
         [<CLIMutable>]
-        type MessageWasDownvoted = 
+        type FutureGroupMemberMessagesWereTrusted =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
-                When: Int64
-            }
-                
-        [<CLIMutable>]
-        type ExpressReactionToMessage =
-            {
-                TenantId: Int32
-                PlatformMemberId: Guid
-                MessageId: Guid
-                Emoji: String
-            }
-
-        [<CLIMutable>]
-        type MessageReactionWasExpressed =
-            {
-                TenantId: Int32
-                GroupId: Guid
-                PlatformMemberId: Guid
-                MessageId: Guid
-                Emoji: String
                 When: Int64
             }
 
         [<CLIMutable>]
-        type BookmarkMessage =
-            {
-                TenantId: Int32
-                PlatformMemberId: Guid
-                MessageId: Guid
-            }
-
-        [<CLIMutable>]
-        type MessageWasBookmarked =
+        type BanGroupMember =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
+                GroupMemberId: Guid
+                When: Int64
+            }
+        
+        [<CLIMutable>]
+        type GroupMemberWasBanned =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                GroupMemberId: Guid
+                When: Int64
+            }
+        
+        [<CLIMutable>]        
+        type BlockGroupMember = 
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                GroupMemberId: Guid
+            }
+        
+        [<CLIMutable>]        
+        type GroupMemberWasBlocked = 
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                GroupMemberId: Guid
                 When: Int64
             }
 
         [<CLIMutable>]
-        type EnableCommentsOnMessage = 
-            {
-                TenantId: Int32
-                PlatformMemberId: Guid
-                MessageId: Guid
-            }
-
-        [<CLIMutable>]
-        type CommentsWereEnabledOnMessage = 
+        type ReportGroupMember =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
-                When: Int64
-
+                GroupMemberId: Guid
             }
 
-        [<CLIMutable>]
-        type DisableCommentsOnMessage = 
-            {
-                TenantId: Int32
-                PlatformMemberId: Guid
-                MessageId: Guid
-            }
-
-        [<CLIMutable>]
-        type CommentsWereDisabledOnMessage = 
+        [<CLIMutable>]        
+        type GroupMemberWasReported = 
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
+                GroupMemberId: Guid
                 When: Int64
             }
-        //AllowCommentingOnMessage, DisableCommentingOnMessage
-        //AllowMessageToBeShared, DisableSharingOfMessage
-        //ShareMessageWithGroup, ShareMessageWithPlatformGuest, ShareMessageOnTwitter, Share
-
-        type PinDuration =
-        | Forever
-        | Until of Int64
-        | For of Int64
 
         [<CLIMutable>]
-        type PinMessage =
+        type TurnGroupMessageModerationOn =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
-                Duration: PinDuration
             }
-
-        [<CLIMutable>]
-        type MessageWasPinned =
+        
+        [<CLIMutable>]        
+        type GroupMessageModerationWasTurnedOn =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
-                Duration: PinDuration
+                When: Int64
             }
 
         [<CLIMutable>]
-        type UnpinMessage =
+        type TurnGroupMessageModerationOff =
             {
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                MessageId: Guid
             }
-
-        [<CLIMutable>]
-        type MessageWasUnpinned =
+        
+        [<CLIMutable>]        
+        type GroupMessageModerationWasTurnedOff =
             {
                 TenantId: Int32
                 GroupId: Guid
+                PlatformMemberId: Guid
+                When: Int64
+            }
+
+        [<CLIMutable>]
+        type ChangeGroupBlacklistWords =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                Blacklist: String[]
+            }
+
+        [<CLIMutable>]
+        type GroupBlacklistWordsWereChanged =
+            {
+                TenantId: Int32
+                GroupId: Guid
+                PlatformMemberId: Guid
+                Blacklist: String[]
+                When: Int32
+            }
+
+        [<CLIMutable>]
+        type ApproveMessage =
+            {
+                TenantId: Int32
                 PlatformMemberId: Guid
                 MessageId: Guid
             }
         
         [<CLIMutable>]
-        type EditMessage =
+        type MessageWasApproved =
             {
                 TenantId: Int32
                 PlatformMemberId: Guid
                 MessageId: Guid
-                Title: String
-                Body: String
+                When: Int64
             }
 
         [<CLIMutable>]
-        type MessageWasEdited =
-            {
-                TenantId: Int32
-                GroupId: Guid
-                PlatformMemberId: Guid
-                MessageId: Guid
-                Title: String
-                Body: String
-            }
-        
-        [<CLIMutable>]
-        type DeleteMessage =
+        type RejectMessage =
             {
                 TenantId: Int32
                 PlatformMemberId: Guid
@@ -226,10 +190,10 @@ namespace Upiter.Messages
             }
 
         [<CLIMutable>]
-        type MessageWasDeleted =
+        type MessageWasRejected =
             {
                 TenantId: Int32
-                GroupId: Guid
                 PlatformMemberId: Guid
                 MessageId: Guid
+                When: Int64
             }
