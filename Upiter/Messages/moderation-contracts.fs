@@ -37,7 +37,7 @@ namespace Upiter.Messages
             }
 
         [<CLIMutable>]
-        type TrustFutureGroupMemberMessages =
+        type TrustFutureMessagesFromGroupMember =
             {
                 TenantId: Int32
                 GroupId: Guid
@@ -45,7 +45,7 @@ namespace Upiter.Messages
             }
         
         [<CLIMutable>]
-        type FutureGroupMemberMessagesWereTrusted =
+        type FutureMessagesFromGroupMemberWereTrusted =
             {
                 TenantId: Int32
                 GroupId: Guid
