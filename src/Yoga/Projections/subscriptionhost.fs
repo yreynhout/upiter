@@ -1,10 +1,11 @@
-namespace Upiter.Projections
+namespace Yoga.Projections
     open System
     open System.Threading.Tasks
     open FSharp.Control
     open Microsoft.FSharp.Reflection
 
     open Serilog
+    open Serilog.Core
     open NodaTime
     
     open System.Runtime.Caching
@@ -14,10 +15,10 @@ namespace Upiter.Projections
     open Newtonsoft.Json
 
     open Upiter.Messages
-    open Upiter.Projections.ProjectionHost
+    open Yoga.Projections.ProjectionHost
     
     module SubscriptionHost =
-        let private log = Log.ForContext("SourceContext", "SubscriptionHost")
+        let private log = Log.ForContext(Constants.SourceContextPropertyName, "SubscriptionHost")
 
         type Projector = Envelope -> Async<unit>
         type Scheduler = Action -> int64 -> unit

@@ -1,13 +1,14 @@
-namespace Upiter
+namespace Yoga
     open System
     open System.Threading
 
     open NodaTime
 
     open Serilog
+    open Serilog.Core
 
     module Scheduler =
-        let private log = Log.ForContext("SourceContext", "Scheduler")
+        let private log = Log.ForContext(Constants.SourceContextPropertyName, "Scheduler")
 
         type PrivateCommands =
             private

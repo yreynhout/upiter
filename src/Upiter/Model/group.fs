@@ -10,17 +10,17 @@ namespace Upiter.Model
     open Upiter.Messages.GroupContracts
 
     module Group = ()
-//         type Events =
-//         | PrivateGroupWasStarted of PrivateGroupWasStarted
-//         | PublicGroupWasStarted of PublicGroupWasStarted
-//         | GroupWasRenamed of GroupWasRenamed
-//         | GroupInformationWasChanged of GroupInformationWasChanged
-//         | GroupMembershipInvitationPolicyWasSet of GroupMembershipInvitationPolicyWasSet
-//         | GroupModerationPolicyWasSet of GroupModerationPolicyWasSet
-//         | GroupWasDeleted of GroupWasDeleted
+        type Events =
+        | PrivateGroupWasStarted of PrivateGroupWasStarted
+        | PublicGroupWasStarted of PublicGroupWasStarted
+        | GroupWasRenamed of GroupWasRenamed
+        | GroupInformationWasChanged of GroupInformationWasChanged
+        | GroupMembershipInvitationPolicyWasSet of GroupMembershipInvitationPolicyWasSet
+        | GroupModerationPolicyWasSet of GroupModerationPolicyWasSet
+        | GroupWasDeleted of GroupWasDeleted
 
-//         type ReadFromStream = (* stream *)String -> (* events *)AsyncSeq<StreamMessage[]>
-//         type AppendToStream = (* stream *)String -> (* expected version *)Int32 -> (* events *)NewStreamMessage[] -> (* result *)Async<AppendResult>
+        type ReadFromStream = (* stream *)String -> (* events *)AsyncSeq<(Events * (* version *)Int32)[]>
+        type AppendToStream = (* stream *)String -> (* expected version *)Int32 -> (* events *)Events[] -> (* result *)Async<Int32>
 
 //         type private States =
 //         | Initial

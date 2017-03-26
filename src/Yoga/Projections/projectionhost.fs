@@ -1,9 +1,10 @@
-namespace Upiter.Projections
+namespace Yoga.Projections
     open System
     open FSharp.Control
     open Microsoft.FSharp.Reflection
 
     open Serilog
+    open Serilog.Core
     open NodaTime
     
     open System.Runtime.Caching
@@ -13,7 +14,7 @@ namespace Upiter.Projections
     open Upiter.Messages
     
     module ProjectionHost =
-        let private log = Log.ForContext("SourceContext", "ProjectionHost")
+        let private log = Log.ForContext(Constants.SourceContextPropertyName, "ProjectionHost")
         type Projection = MemoryCache -> Envelope -> unit
         type Scheduler = Action -> int64 -> unit
 

@@ -1,0 +1,10 @@
+FSharp.Core
+SqlStreamStore
+Newtonsoft.Json
+FSharp.Control.AsyncSeq
+NodaTime
+Serilog
+Serilog.Extras.FSharp
+Serilog.Sinks.ColoredConsole
+Serilog.Sinks.Async
+Serilog.Sinks.File

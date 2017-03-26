@@ -10,8 +10,8 @@ let deployDir = "./deploy/"
 
 // Filesets
 let appReferences  =
-    !! "/**/*.csproj"
-    ++ "/**/*.fsproj"
+    !! "/src/Upiter/Upiter.fsproj"
+    ++ "/src/Yoga/Yoga.fsproj"
 
 // version info
 let version = "0.1"  // or retrieve from CI server
@@ -22,6 +22,9 @@ Target "Clean" (fun _ ->
 )
 
 Target "Build" (fun _ ->
+    //MSBuildDefaults <- 
+    //    { MSBuildDefaults with Verbosity = Some(MSBuildVerbosity.Diagnostic) }
+    
     // compile all projects below src/app/
     MSBuildDebug buildDir "Build" appReferences
     |> Log "AppBuild-Output: "
@@ -30,7 +33,7 @@ Target "Build" (fun _ ->
 Target "Deploy" (fun _ ->
     !! (buildDir + "/**/*.*")
     -- "*.zip"
-    |> Zip buildDir (deployDir + "ApplicationName." + version + ".zip")
+    |> Zip buildDir (deployDir + "Yoga." + version + ".zip")
 )
 
 // Build order

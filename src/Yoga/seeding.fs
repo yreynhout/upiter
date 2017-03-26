@@ -1,4 +1,4 @@
-namespace Upiter
+namespace Yoga
     open System
     open Upiter.Messages
     open Upiter.Messages.GroupContracts

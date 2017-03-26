@@ -1,4 +1,4 @@
-namespace Upiter.Projections
+namespace Yoga.Projections
     open System
     open System.Runtime.Caching
 

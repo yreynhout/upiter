@@ -1,4 +1,4 @@
-namespace Upiter
+namespace Yoga
     open System
     open System.Runtime.Caching
 
@@ -9,9 +9,9 @@ namespace Upiter
 
     open Upiter.Messages
     open Upiter.Messages.GroupContracts
-    open Upiter.Scheduler
-    open Upiter.Projections
-    open Upiter.Seeding
+    open Yoga.Scheduler
+    open Yoga.Projections
+    open Yoga.Seeding
     
     open Newtonsoft.Json
     open SqlStreamStore
