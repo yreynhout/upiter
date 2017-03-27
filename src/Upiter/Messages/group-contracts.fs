@@ -97,7 +97,6 @@ namespace Upiter.Messages
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-                Name: String
                 When: Int64
             }
 
