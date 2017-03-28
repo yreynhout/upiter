@@ -4,6 +4,7 @@ namespace Upiter
     open FSharp.Control
 
     open Serilog
+    open Serilog.Core
     open NodaTime
     open Newtonsoft.Json
     open SqlStreamStore
@@ -19,6 +20,8 @@ namespace Upiter
     open Suave.Successful
     
     module App =
+        let private log = Log.ForContext(Constants.SourceContextPropertyName, "App")
+
         let private getOrCreateRequestId (request: HttpRequest) =
             match request.header("X-Request-ID") with
             | Choice1Of2 value -> 
@@ -32,20 +35,29 @@ namespace Upiter
         let private toGroupCommand path data (settings: JsonSerializerSettings) =
             let json = Encoding.UTF8.GetString(data)
             match path with
-            | "/api/group/start_private" -> Some (StartPrivateGroup (JsonConvert.DeserializeObject<StartPrivateGroup>(json, settings)))
-            | "/api/group/start_public" -> Some (StartPublicGroup (JsonConvert.DeserializeObject<StartPublicGroup>(json, settings)))
-            | "/api/group/rename" -> Some (RenameGroup (JsonConvert.DeserializeObject<RenameGroup>(json, settings)))
-            | "/api/group/change_information" -> Some (ChangeGroupInformation (JsonConvert.DeserializeObject<ChangeGroupInformation>(json, settings)))
-            | "/api/group/set_membership_invitation_policy" -> Some (SetGroupMembershipInvitationPolicy (JsonConvert.DeserializeObject<SetGroupMembershipInvitationPolicy>(json, settings)))
-            | "/api/group/set_moderation_policy" -> Some (SetGroupModerationPolicy (JsonConvert.DeserializeObject<SetGroupModerationPolicy>(json, settings)))
-            | "/api/group/delete" -> Some (DeleteGroup (JsonConvert.DeserializeObject<DeleteGroup>(json, settings)))
+            | "/api/group/start_private" -> 
+                Some (StartPrivateGroup (JsonConvert.DeserializeObject<StartPrivateGroup>(json, settings)))
+            | "/api/group/start_public" -> 
+                Some (StartPublicGroup (JsonConvert.DeserializeObject<StartPublicGroup>(json, settings)))
+            | "/api/group/rename" -> 
+                Some (RenameGroup (JsonConvert.DeserializeObject<RenameGroup>(json, settings)))
+            | "/api/group/change_information" -> 
+                Some (ChangeGroupInformation (JsonConvert.DeserializeObject<ChangeGroupInformation>(json, settings)))
+            | "/api/group/set_membership_invitation_policy" -> 
+                Some (SetGroupMembershipInvitationPolicy (JsonConvert.DeserializeObject<SetGroupMembershipInvitationPolicy>(json, settings)))
+            | "/api/group/set_moderation_policy" -> 
+                Some (SetGroupModerationPolicy (JsonConvert.DeserializeObject<SetGroupModerationPolicy>(json, settings)))
+            | "/api/group/delete" -> 
+                Some (DeleteGroup (JsonConvert.DeserializeObject<DeleteGroup>(json, settings)))
             | _ -> None
 
         let private handleGroupCommand (router: GroupRouter) (httpJsonSettings: JsonSerializerSettings) : WebPart =
             fun (context : HttpContext) -> async {
+                log.Debug("Handle command on path {path}", context.request.url.PathAndQuery)
                 let command = toGroupCommand context.request.url.PathAndQuery context.request.rawForm httpJsonSettings
                 match command with
                 | Some message ->
+                    log.Debug("Converted request to command on path {path}: {command}", context.request.url.PathAndQuery, message)
                     let! result = 
                         router.PostAndAsyncReply(
                             fun reply -> 
@@ -62,12 +74,13 @@ namespace Upiter
                         >=> OK (JsonConvert.SerializeObject(message)))
                         context
                 | None -> 
+                    log.Debug("Failed to convert request to command on path {path}", context.request.url.PathAndQuery)
                     return!
                         (setMimeType "application/problem+json"
                         >=> BAD_REQUEST (
                             JsonConvert.SerializeObject(
                                 dict [
-                                    "type", "urn:upiter-v1:group_command_not_understood"
+                                    "type", "urn:upiter:v1:group_command_not_understood"
                                     "title", "GROUP_COMMAND_NOT_UNDERSTOOD"
                                     "details", "The group command you've sent could not be understood."
                                     "status", "400"
@@ -76,8 +89,13 @@ namespace Upiter
                         ))
                         context
             }
+
         let app (httpJsonSettings: JsonSerializerSettings) (store: IStreamStore) (storeJsonSettings: JsonSerializerSettings) (clock: IClock) =
-            let router = spawnGroupRouter (Model.GroupStorage.reader store storeJsonSettings) (Model.GroupStorage.appender store storeJsonSettings) clock
+            let router = 
+                spawnGroupRouter 
+                    (Model.GroupStorage.reader store storeJsonSettings) 
+                    (Model.GroupStorage.appender store storeJsonSettings) 
+                    clock
 
             choose 
                 [

@@ -10,3 +10,4 @@ Serilog.Sinks.Async
 Serilog.Sinks.File
 Suave
 Argu
+SqlStreamStore.MsSql

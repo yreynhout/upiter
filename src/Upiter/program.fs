@@ -61,12 +61,20 @@ namespace Upiter
             httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
             let storeJsonSettings = JsonSerializerSettings()
 
+            let storeSettings = MsSqlStreamStoreSettings("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=upiter;Integrated Security=True;")
+            
+
             let parser = ArgumentParser.Create<ProgramArguments>()
             let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
             //Config
             let port = parsed.GetResult (<@ Port @>, 8083)
             //Server
-            using (new InMemoryStreamStore()) (fun store -> 
+            using (new MsSqlStreamStore(storeSettings)) (fun store -> 
+                //yuck
+                store.CreateSchema(true, Async.DefaultCancellationToken)
+                |> Async.AwaitTask
+                |> Async.RunSynchronously
+
                 startWebServer (serverConfig port) (app httpJsonSettings store storeJsonSettings SystemClock.Instance)
             )
             0 // return an integer exit code

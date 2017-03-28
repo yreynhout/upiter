@@ -14,4 +14,5 @@ nuget Serilog.Sinks.Async
 nuget Serilog.Sinks.ColoredConsole
 nuget Serilog.Sinks.File
 nuget SqlStreamStore
+nuget SqlStreamStore.MsSql
 nuget Suave

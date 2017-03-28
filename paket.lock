@@ -22,6 +22,8 @@ NUGET
     Serilog.Sinks.File (3.2)
       Serilog (>= 2.3)
     SqlStreamStore (0.7.1)
+    SqlStreamStore.MsSql (0.7.1)
+      SqlStreamStore (>= 0.7 < 0.8)
     Suave (2.0.5)
       FSharp.Core (>= 4.0.0.1)
     System.ValueTuple (4.3)
