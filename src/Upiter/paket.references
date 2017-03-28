@@ -8,3 +8,5 @@ Serilog.Extras.FSharp
 Serilog.Sinks.ColoredConsole
 Serilog.Sinks.Async
 Serilog.Sinks.File
+Suave
+Argu

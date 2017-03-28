@@ -1,79 +1,87 @@
 namespace Upiter
     open System
-    open System.Security.Cryptography
+    open System.Text
     open FSharp.Control
 
     open Serilog
-    
     open NodaTime
+    open Newtonsoft.Json
+    open SqlStreamStore
 
-    open Upiter.Messages
     open Upiter.Messages.GroupContracts
     open Upiter.Model.Group
     
-    open Newtonsoft.Json
-    open SqlStreamStore
-    open SqlStreamStore.Streams
+    open Suave
+    open Suave.Filters
+    open Suave.Writers
+    open Suave.Operators
+    open Suave.RequestErrors
+    open Suave.Successful
     
     module App =
-        let reader (store: IStreamStore) (settings: JsonSerializerSettings) (identity: GroupIdentity) (start: Int32) : Async<ReadResult> = async {
-            let stream = StreamId(sprintf "%d~%s" identity.TenantId (identity.GroupId.ToString("N")))
-            let! initialPage = store.ReadStreamForwards(stream, start, 100, true, Async.DefaultCancellationToken) |> Async.AwaitTask
-            if initialPage.Status = PageReadStatus.StreamNotFound then
-                return (-1, AsyncSeq.empty)
-            else
-                let generator (page: ReadStreamPage) : Async<(Events[] * ReadStreamPage) option> = async {
-                    //this is flawed and verbose - but I do want to keep 
-                    if page.IsEnd then
-                        return None
-                    else
-                        let! events =
-                            page.Messages
-                            |> AsyncSeq.ofSeq
-                            |> AsyncSeq.chooseAsync (fun message -> async {
-                                let! json = message.GetJsonData(Async.DefaultCancellationToken) |> Async.AwaitTask
-                                return 
-                                    match message.Type with
-                                    | "PrivateGroupWasStarted" -> 
-                                        Some(PrivateGroupWasStarted(JsonConvert.DeserializeObject(json, typeof<PrivateGroupWasStarted>, settings) :?> PrivateGroupWasStarted))
-                                    | "PublicGroupWasStarted" ->
-                                        Some(PublicGroupWasStarted(JsonConvert.DeserializeObject(json, typeof<PublicGroupWasStarted>, settings) :?> PublicGroupWasStarted))
-                                    | "GroupWasRenamed" ->
-                                        Some(GroupWasRenamed(JsonConvert.DeserializeObject(json, typeof<GroupWasRenamed>, settings) :?> GroupWasRenamed))
-                                    | "GroupInformationWasChanged" ->
-                                        Some(GroupInformationWasChanged(JsonConvert.DeserializeObject(json, typeof<GroupInformationWasChanged>, settings) :?> GroupInformationWasChanged))
-                                    | "GroupMembershipInvitationPolicyWasSet" ->
-                                        Some(GroupMembershipInvitationPolicyWasSet(JsonConvert.DeserializeObject(json, typeof<GroupMembershipInvitationPolicyWasSet>, settings) :?> GroupMembershipInvitationPolicyWasSet))
-                                    | "GroupModerationPolicyWasSet" ->
-                                        Some(GroupModerationPolicyWasSet(JsonConvert.DeserializeObject(json, typeof<GroupModerationPolicyWasSet>, settings) :?> GroupModerationPolicyWasSet))
-                                    | "GroupWasDeleted" ->
-                                        Some(GroupWasDeleted(JsonConvert.DeserializeObject(json, typeof<GroupWasDeleted>, settings) :?> GroupWasDeleted))
-                                    | _ -> None
-                            })
-                            |> AsyncSeq.toArrayAsync
-                        let! nextPage = page.ReadNext(Async.DefaultCancellationToken) |> Async.AwaitTask
-                        return Some (events, nextPage)
-                }
-                return (initialPage.LastStreamVersion, (AsyncSeq.unfoldAsync generator initialPage))
-        }
+        let private getOrCreateRequestId (request: HttpRequest) =
+            match request.header("X-Request-ID") with
+            | Choice1Of2 value -> 
+                let mutable parsed = Guid.Empty;  
+                if Guid.TryParse(value, &parsed) then 
+                    parsed
+                else
+                    Guid.NewGuid()
+            | Choice2Of2 _ -> Guid.NewGuid()
+        
+        let private toGroupCommand path data (settings: JsonSerializerSettings) =
+            let json = Encoding.UTF8.GetString(data)
+            match path with
+            | "/api/group/start_private" -> Some (StartPrivateGroup (JsonConvert.DeserializeObject<StartPrivateGroup>(json, settings)))
+            | "/api/group/start_public" -> Some (StartPublicGroup (JsonConvert.DeserializeObject<StartPublicGroup>(json, settings)))
+            | "/api/group/rename" -> Some (RenameGroup (JsonConvert.DeserializeObject<RenameGroup>(json, settings)))
+            | "/api/group/change_information" -> Some (ChangeGroupInformation (JsonConvert.DeserializeObject<ChangeGroupInformation>(json, settings)))
+            | "/api/group/set_membership_invitation_policy" -> Some (SetGroupMembershipInvitationPolicy (JsonConvert.DeserializeObject<SetGroupMembershipInvitationPolicy>(json, settings)))
+            | "/api/group/set_moderation_policy" -> Some (SetGroupModerationPolicy (JsonConvert.DeserializeObject<SetGroupModerationPolicy>(json, settings)))
+            | "/api/group/delete" -> Some (DeleteGroup (JsonConvert.DeserializeObject<DeleteGroup>(json, settings)))
+            | _ -> None
 
-        // let appender (store: IStreamStore) (settings: JsonSerializerSettings) (identity: GroupIdentity) (request: Guid) (expected: Int32) (events: Events[]) : Async<AppendResult> = async {
-        //     let stream = StreamId(sprintf "%d~%s" identity.TenantId (identity.GroupId.ToString("N")))
-        //     using (MD5.Create()) (fun hash ->
-        //         let requestBytes = request.ToByteArray()
+        let private handleGroupCommand (router: GroupRouter) (httpJsonSettings: JsonSerializerSettings) : WebPart =
+            fun (context : HttpContext) -> async {
+                let command = toGroupCommand context.request.url.PathAndQuery context.request.rawForm httpJsonSettings
+                match command with
+                | Some message ->
+                    let! result = 
+                        router.PostAndAsyncReply(
+                            fun reply -> 
+                                let envelope =
+                                    { 
+                                        Model.Envelope.RequestId = (getOrCreateRequestId context.request)
+                                        Model.Envelope.Message = message
+                                    }
+                                (envelope, reply)
+                        )
+                    return!
+                        (setMimeType "application/json"
+                        >=> setHeader "X-Position" (result.ToString()) 
+                        >=> OK (JsonConvert.SerializeObject(message)))
+                        context
+                | None -> 
+                    return!
+                        (setMimeType "application/problem+json"
+                        >=> BAD_REQUEST (
+                            JsonConvert.SerializeObject(
+                                dict [
+                                    "type", "urn:upiter-v1:group_command_not_understood"
+                                    "title", "GROUP_COMMAND_NOT_UNDERSTOOD"
+                                    "details", "The group command you've sent could not be understood."
+                                    "status", "400"
+                                ]
+                            )
+                        ))
+                        context
+            }
+        let app (httpJsonSettings: JsonSerializerSettings) (store: IStreamStore) (storeJsonSettings: JsonSerializerSettings) (clock: IClock) =
+            let router = spawnGroupRouter (Model.GroupStorage.reader store storeJsonSettings) (Model.GroupStorage.appender store storeJsonSettings) clock
 
-        //         hash.ComputeHash(
-        //     )
-        //     let messages =
-        //         events
-        //         |> Array.mapi (fun index message -> 
-        //             new NewStreamMessage(
-        //         )
-
-        //     let! result = store.AppendToStream(stream, expected, messages, Async.DefaultCancellationToken) |> Async.AwaitTask
-        //     return (-1, -1L)
-        // }
-            
-
-        //let appender identity expected 
-        //let router = spawnGroupRouter reader appender SystemClock.Instance
+            choose 
+                [
+                    POST >=> choose [
+                        pathStarts "/api/group" >=> handleGroupCommand router httpJsonSettings
+                    ]
+                ]

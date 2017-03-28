@@ -11,6 +11,7 @@ namespace Upiter.Messages
                 Name: String
                 Purpose: String
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Starting private group %s - %s" this.TenantId (this.GroupId.ToString("N")) this.Name
 
         [<CLIMutable>]
         type PrivateGroupWasStarted =
@@ -22,6 +23,7 @@ namespace Upiter.Messages
                 Purpose: String
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Started private group %s - %s" this.TenantId (this.GroupId.ToString("N")) this.Name
 
         [<CLIMutable>]
         type StartPublicGroup =
@@ -32,6 +34,7 @@ namespace Upiter.Messages
                 Name: String
                 Purpose: String
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Starting public group %s - %s" this.TenantId (this.GroupId.ToString("N")) this.Name
 
         [<CLIMutable>]
         type PublicGroupWasStarted =
@@ -43,6 +46,7 @@ namespace Upiter.Messages
                 Purpose: String
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Started public group %s - %s" this.TenantId (this.GroupId.ToString("N")) this.Name
             
         [<CLIMutable>]
         type ChangeGroupInformation = 
@@ -52,6 +56,7 @@ namespace Upiter.Messages
                 PlatformMemberId: Guid
                 Purpose: string
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Changing group %s information: %s" this.TenantId (this.GroupId.ToString("N")) this.Purpose
 
         [<CLIMutable>]
         type GroupInformationWasChanged =
@@ -62,6 +67,7 @@ namespace Upiter.Messages
                 Purpose: String
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Changed group %s information: %s" this.TenantId (this.GroupId.ToString("N")) this.Purpose
 
         [<CLIMutable>]
         type RenameGroup =
@@ -71,6 +77,7 @@ namespace Upiter.Messages
                 PlatformMemberId: Guid
                 Name: String
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Renaming group %s: %s" this.TenantId (this.GroupId.ToString("N")) this.Name
 
         [<CLIMutable>]
         type GroupWasRenamed =
@@ -81,7 +88,7 @@ namespace Upiter.Messages
                 Name: String
                 When: Int64
             }
-        
+            with override this.ToString() = sprintf "[Tenant:%d]Renamed group %s: %s" this.TenantId (this.GroupId.ToString("N")) this.Name
 
         [<CLIMutable>]
         type DeleteGroup =
@@ -89,7 +96,8 @@ namespace Upiter.Messages
                 TenantId: Int32
                 GroupId: Guid
                 PlatformMemberId: Guid
-            }        
+            }
+            with override this.ToString() = sprintf "[Tenant:%d]Delete group %s" this.TenantId (this.GroupId.ToString("N"))
 
         [<CLIMutable>]
         type GroupWasDeleted =
@@ -99,6 +107,7 @@ namespace Upiter.Messages
                 PlatformMemberId: Guid
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Deleted group %s" this.TenantId (this.GroupId.ToString("N"))
 
         [<CLIMutable>]
         type SetGroupMembershipInvitationPolicy =
@@ -110,6 +119,7 @@ namespace Upiter.Messages
                 AllowModeratorsToInvite: Boolean
                 AllowOwnersToInvite: Boolean
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Set group %s membership invitiation policy" this.TenantId (this.GroupId.ToString("N"))
 
         [<CLIMutable>]
         type GroupMembershipInvitationPolicyWasSet =
@@ -122,6 +132,7 @@ namespace Upiter.Messages
                 AllowOwnersToInvite: Boolean
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Group %s membership invitiation policy was set" this.TenantId (this.GroupId.ToString("N"))
 
         type ModerationChoice = Yes = 0 | Moderated = 1 | No = 2
 
@@ -140,6 +151,7 @@ namespace Upiter.Messages
                 RequireModerationAsOfImageCount: Int32
                 RequireModerationAsOfMediaCount: Int32
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Set group %s moderation policy" this.TenantId (this.GroupId.ToString("N"))            
 
         [<CLIMutable>]
         type GroupModerationPolicyWasSet =
@@ -157,3 +169,4 @@ namespace Upiter.Messages
                 RequireModerationAsOfMediaCount: Int32
                 When: Int64
             }
+            with override this.ToString() = sprintf "[Tenant:%d]Group %s moderation policy was set" this.TenantId (this.GroupId.ToString("N"))

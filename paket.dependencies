@@ -1,6 +1,7 @@
 source https://www.nuget.org/api/v2
 framework: net462
 
+nuget Argu
 nuget FAKE
 nuget FSharp.Control.AsyncSeq
 nuget FSharp.Core
