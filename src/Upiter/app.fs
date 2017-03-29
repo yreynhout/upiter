@@ -90,7 +90,7 @@ namespace Upiter
                         | NotAuthorized reason ->
                             return!
                                 (setMimeType "application/problem+json"
-                                >=> FORBIDDEN (JsonConvert.SerializeObject({ HttpProblemDetails.NotAuthorizedError with Details = Some(reason) })))
+                                >=> FORBIDDEN (JsonConvert.SerializeObject({ HttpProblemDetails.NotAuthorizedError with Details = reason })))
                                 context
                 | None -> 
                     log.Debug("Failed to convert request to command on path {path}", context.request.url.PathAndQuery)

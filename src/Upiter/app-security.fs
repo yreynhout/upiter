@@ -50,7 +50,7 @@ namespace Upiter
                     handler.ValidateToken(token, composeTokenValidationParameters, ref null)
                 principal |> Ok
             with
-                | ex -> Error { HttpProblemDetails.BearerTokenNotValid with Details = Some(ex.Message) }
+                | ex -> Error { HttpProblemDetails.BearerTokenNotValid with Details = ex.Message }
 
         let authorize (authenticationOptions: JwtBearerAuthenticationOptions) (httpJsonSettings: JsonSerializerSettings) (next: WebPart) : WebPart =
              fun (context : HttpContext) -> async {
