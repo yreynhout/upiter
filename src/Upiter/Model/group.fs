@@ -135,7 +135,7 @@ namespace Upiter.Model
                     let decision : Result<Events[], Errors> =
                         match envelope.Message with
                         | StartPrivateGroup cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator()) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator.")
                             elif group.Data.IsInState(Initial) then
                                 Ok [| 
@@ -152,7 +152,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | StartPublicGroup cmd ->
-                            if group.Data.IsInState(Initial) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator()) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator.")
+                            elif group.Data.IsInState(Initial) then
                                 Ok [| 
                                     PublicGroupWasStarted
                                         { 
@@ -167,7 +169,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | RenameGroup cmd -> 
-                            if group.Data.IsInState(Started) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
+                            elif group.Data.IsInState(Started) then
                                 Ok [| 
                                     GroupWasRenamed
                                         { 
@@ -181,7 +185,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | ChangeGroupInformation cmd ->
-                            if group.Data.IsInState(Started) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
+                            elif group.Data.IsInState(Started) then
                                 Ok [| 
                                     GroupInformationWasChanged
                                         { 
@@ -195,7 +201,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | SetGroupMembershipInvitationPolicy cmd ->
-                           if group.Data.IsInState(Started) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
+                            elif group.Data.IsInState(Started) then
                                 Ok [| 
                                     GroupMembershipInvitationPolicyWasSet
                                         { 
@@ -211,7 +219,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | SetGroupModerationPolicy cmd ->
-                           if group.Data.IsInState(Started) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
+                            elif group.Data.IsInState(Started) then
                                 Ok [| 
                                     GroupModerationPolicyWasSet
                                         { 
@@ -232,7 +242,9 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | DeleteGroup cmd -> 
-                            if group.Data.IsInState(Started) then
+                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
+                            elif group.Data.IsInState(Started) then
                                 Ok [| 
                                     GroupWasDeleted
                                         { 
