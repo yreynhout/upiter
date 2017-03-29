@@ -98,7 +98,9 @@ namespace Upiter
             using (selectStreamStore) (fun store -> 
                 let httpJsonSettings = JsonSerializerSettings()
                 httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
+                httpJsonSettings.NullValueHandling <- NullValueHandling.Ignore
                 let storeJsonSettings = JsonSerializerSettings()    
+                storeJsonSettings.NullValueHandling <- NullValueHandling.Ignore
                 startWebServer (serverConfig port) (app authenticationOptions httpJsonSettings store storeJsonSettings SystemClock.Instance)
             )
             0 // return an integer exit code

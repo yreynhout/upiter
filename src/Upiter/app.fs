@@ -1,5 +1,6 @@
 namespace Upiter
     open System
+    open System.Security.Claims
     open System.Text
     open FSharp.Control
 
@@ -34,6 +35,11 @@ namespace Upiter
                     Guid.NewGuid()
             | Choice2Of2 _ -> Guid.NewGuid()
         
+        let private getPlatformMemberOrBePlatformGuest (userState: Map<string, obj>) =
+            match Map.tryFind AppSecurity.PlatformMemberKey userState with
+            | Some principal -> principal :?> ClaimsPrincipal
+            | None -> ClaimsPrincipal()
+        
         let private toGroupCommand path data (settings: JsonSerializerSettings) =
             let json = Encoding.UTF8.GetString(data)
             match path with
@@ -64,31 +70,33 @@ namespace Upiter
                         router.PostAndAsyncReply(
                             fun reply -> 
                                 let envelope =
-                                    { 
+                                    {
                                         Model.Envelope.RequestId = (getOrCreateRequestId context.request)
                                         Model.Envelope.Message = message
+                                        Model.Envelope.PlatformMember = (getPlatformMemberOrBePlatformGuest context.userState)
                                     }
                                 (envelope, reply)
                         )
-                    return!
-                        (setMimeType "application/json"
-                        >=> setHeader "X-Position" (result.ToString()) 
-                        >=> OK (JsonConvert.SerializeObject(message)))
-                        context
+                    match result with
+                    | Ok position ->
+                        let (_, command) = message.ToContractMessage()
+                        return!
+                            (setMimeType "application/json"
+                            >=> setHeader "X-Position" (position.ToString()) 
+                            >=> OK (JsonConvert.SerializeObject(command)))
+                            context
+                    | Error error ->
+                        match error with
+                        | NotAuthorized reason ->
+                            return!
+                                (setMimeType "application/problem+json"
+                                >=> FORBIDDEN (JsonConvert.SerializeObject({ HttpProblemDetails.NotAuthorizedError with Details = Some(reason) })))
+                                context
                 | None -> 
                     log.Debug("Failed to convert request to command on path {path}", context.request.url.PathAndQuery)
                     return!
                         (setMimeType "application/problem+json"
-                        >=> BAD_REQUEST (
-                            JsonConvert.SerializeObject(
-                                dict [
-                                    "type", "urn:upiter:v1:group_command_not_understood"
-                                    "title", "GROUP_COMMAND_NOT_UNDERSTOOD"
-                                    "details", "The group command you've sent could not be understood."
-                                    "status", "400"
-                                ]
-                            )
-                        ))
+                        >=> BAD_REQUEST (JsonConvert.SerializeObject(HttpProblemDetails.JsonParseError)))
                         context
             }
 

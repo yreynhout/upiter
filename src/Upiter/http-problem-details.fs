@@ -10,7 +10,7 @@ namespace Upiter
         Details: String option
         Instance: Uri option
     }
-    with 
+    with
         static member MissingOrTooManyAuthorizationHeaders = 
             { 
                 Status   = 401
@@ -43,14 +43,11 @@ namespace Upiter
                 Details  = None
                 Instance = None
             }
-    //     static member MissingContentTypeHeader = { StatusCode=400; Type="MissingContentTypeHeader"; Title="The content type header was not specified." }
-    //     static member TooManyContentTypeHeaders = { StatusCode=400; Type="TooManyContentTypeHeaders"; Title="The content type header appears too many times." }
-    //     static member ContentTypeHeaderMismatch = { StatusCode=400; Type="ContentTypeHeaderMismatch"; Title="The content type header does not match the expected content type." }
-    //     // static member FileExtensionNotSupported = { StatusCode=400; Type="FileExtensionNotSupported"; Title="The file extension specified is not supported." }
-    //     // static member FileMimeTypeNotSupported = { StatusCode=400; Type="FileMimeTypeNotSupported"; Title="The file mime type specified is not supported." }
-    //     // static member FileSizeNotSupported = { StatusCode=400; Type="FileSizeNotSupported"; Title="The file size is not supported." }
-    //     static member JsonDeserializeError = { StatusCode=400; Type="JsonDeserializeError"; Title="There was a problem deserializing the json data you've sent us." }
-    //     static member JsonParseError = { StatusCode=400; Type="JsonParseError"; Title="There was a problem parsing the json data you've sent us." }
-    
-    //     static member BearerTokenMismatch = { StatusCode=401; Type="BearerTokenMismatch"; Title="" }
-    //     static member MissingRequiredClaim = { StatusCode=403; Type="MissingRequiredClaim"; Title="" }
+        static member NotAuthorizedError = 
+            { 
+                Status   = 403
+                Type     = new Uri("https://tools.ietf.org/html/rfc7231#section-6.5.3")
+                Title    = "The caller is not authorized to perform the request."
+                Details  = None
+                Instance = None
+            }

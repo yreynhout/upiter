@@ -97,5 +97,7 @@ namespace Upiter.Model
                     NewStreamMessage(messageId, messageType, messageJson, metadataJson)
                 )
             let! result = store.AppendToStream(stream, expected, messages, Async.DefaultCancellationToken) |> Async.AwaitTask
-            return (result.CurrentVersion, -1L) //TODO: once stream store returns current position, we're golden
+            //TODO: once stream store returns current position, we're golden - until then lets return the head
+            let! head = store.ReadHeadPosition(Async.DefaultCancellationToken) |> Async.AwaitTask
+            return (result.CurrentVersion, head)
         }

@@ -55,6 +55,7 @@
     <Compile Include="Messages/comment-contracts.fs" />
     <Compile Include="Messages/poll-contracts.fs" />
     <Compile Include="Model/envelope.fs" />
+    <Compile Include="Model/claims.fs" />
     <Compile Include="Model/message-identity.fs" />
     <Compile Include="Model/group.fs" />
     <Compile Include="Model/group-storage.fs" />

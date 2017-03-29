@@ -22,6 +22,9 @@ namespace Upiter
             Issuer: string
         }
 
+        [<Literal>]
+        let PlatformMemberKey = "PlatformMember"
+
         let private verifyAuthorizationToken token authenticationOptions : Result<ClaimsPrincipal, HttpProblemDetails> =
             let toSecurityKey (secret: string) =
                 //Secrets are now UTF-8 instead of Base64 over at Auth0.com
@@ -54,19 +57,22 @@ namespace Upiter
                  let authorizationHeaders = getHeader "Authorization" context |> Seq.toArray
                  let continuation =
                     if Array.length authorizationHeaders <> 1 then
-                        (UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.MissingOrTooManyAuthorizationHeaders, httpJsonSettings)) 
-                        >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                        (setMimeType "application/problem+json"
+                        >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")
+                        >=> UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.MissingOrTooManyAuthorizationHeaders, httpJsonSettings))) 
                     else
                         let authorizationHeader = Array.exactlyOne authorizationHeaders
                         if not(authorizationHeader.StartsWith("Bearer ")) then
-                            (UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.AuthorizationHeaderMismatch, httpJsonSettings)) 
-                            >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                            (setMimeType "application/problem+json"
+                            >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")
+                            >=> UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.AuthorizationHeaderMismatch, httpJsonSettings))) 
                         else 
                             match verifyAuthorizationToken (authorizationHeader.Substring(7)) authenticationOptions with
                             | Ok principal ->
-                                setUserData "PlatformMember" principal >=> next
+                                setUserData PlatformMemberKey principal >=> next
                             | Error problem ->
-                                (UNAUTHORIZED (JsonConvert.SerializeObject(problem, httpJsonSettings)) 
-                                >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                                (setMimeType "application/problem+json"
+                                >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")
+                                >=> UNAUTHORIZED (JsonConvert.SerializeObject(problem, httpJsonSettings))) 
                 return! continuation context
              }

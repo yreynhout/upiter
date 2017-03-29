@@ -8,6 +8,7 @@ namespace Upiter.Model
     open Serilog.Core
 
     open Upiter.Messages.GroupContracts
+    open Upiter.Model.Claims
 
     module Group =
         let private log = Log.ForContext(Constants.SourceContextPropertyName, "Group")
@@ -20,6 +21,16 @@ namespace Upiter.Model
         | GroupMembershipInvitationPolicyWasSet of GroupMembershipInvitationPolicyWasSet
         | GroupModerationPolicyWasSet of GroupModerationPolicyWasSet
         | GroupWasDeleted of GroupWasDeleted
+        with
+            member this.ToContractMessage() =
+                match this with
+                | PrivateGroupWasStarted event                -> ("PrivateGroupWasStarted", event :> obj)
+                | PublicGroupWasStarted event                 -> ("PublicGroupWasStarted", event :> obj)
+                | GroupWasRenamed event                       -> ("GroupWasRenamed", event :> obj)
+                | GroupInformationWasChanged event            -> ("GroupInformationWasChanged", event :> obj)
+                | GroupMembershipInvitationPolicyWasSet event -> ("GroupMembershipInvitationPolicyWasSet", event :> obj)
+                | GroupModerationPolicyWasSet event           -> ("GroupModerationPolicyWasSet", event :> obj)
+                | GroupWasDeleted event                       -> ("GroupWasDeleted", event :> obj)
 
         type GroupIdentity =
             struct
@@ -78,8 +89,22 @@ namespace Upiter.Model
         | SetGroupMembershipInvitationPolicy of SetGroupMembershipInvitationPolicy
         | SetGroupModerationPolicy of SetGroupModerationPolicy
         | DeleteGroup of DeleteGroup
+        with
+            member this.ToContractMessage() =
+                match this with
+                | StartPrivateGroup cmd                     -> ("StartPrivateGroup", cmd :> obj)
+                | StartPublicGroup cmd                      -> ("StartPublicGroup", cmd :> obj)
+                | RenameGroup cmd                           -> ("RenameGroup", cmd :> obj)
+                | ChangeGroupInformation cmd                -> ("ChangeGroupInformation", cmd :> obj)
+                | SetGroupMembershipInvitationPolicy cmd    -> ("SetGroupMembershipInvitationPolicy", cmd :> obj)
+                | SetGroupModerationPolicy cmd              -> ("SetGroupModerationPolicy", cmd :> obj)
+                | DeleteGroup cmd                           -> ("DeleteGroup", cmd :> obj)
 
-        type private GroupActor = MailboxProcessor<Envelope<Commands> * AsyncReplyChannel<Int64>>
+
+        type Errors =
+        | NotAuthorized of (* reason *)string
+
+        type private GroupActor = MailboxProcessor<Envelope<Commands> * AsyncReplyChannel<Result<Int64, Errors>>>
         let private spawnGroupActor (identity: GroupIdentity) (reader: ReadFromStream) (appender: AppendToStream) (clock: IClock) : GroupActor =
             let load = async {
                 log.Debug("Loading group {group} from tenant {tenant}", identity.GroupId, identity.TenantId)
@@ -105,13 +130,15 @@ namespace Upiter.Model
 
             MailboxProcessor.Start <| fun inbox ->
                 let rec loop (group: Aggregate) = async {
-                    let! (envelope: Envelope<Commands>, channel: AsyncReplyChannel<Int64>) = inbox.Receive()
+                    let! (envelope, channel) = inbox.Receive()
                     log.Debug("GroupActor: {message}", envelope.Message)
-                    let events : Events[] =
+                    let decision : Result<Events[], Errors> =
                         match envelope.Message with
                         | StartPrivateGroup cmd ->
-                            if group.Data.IsInState(Initial) then
-                                [| 
+                            if not(envelope.PlatformMember.IsPlatformAdministrator) then
+                                Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator.")
+                            elif group.Data.IsInState(Initial) then
+                                Ok [| 
                                     PrivateGroupWasStarted
                                         { 
                                             TenantId = cmd.TenantId
@@ -123,10 +150,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | StartPublicGroup cmd ->
                             if group.Data.IsInState(Initial) then
-                                [| 
+                                Ok [| 
                                     PublicGroupWasStarted
                                         { 
                                             TenantId = cmd.TenantId
@@ -138,10 +165,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | RenameGroup cmd -> 
                             if group.Data.IsInState(Started) then
-                                [| 
+                                Ok [| 
                                     GroupWasRenamed
                                         { 
                                             TenantId = cmd.TenantId
@@ -152,10 +179,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | ChangeGroupInformation cmd ->
                             if group.Data.IsInState(Started) then
-                                [| 
+                                Ok [| 
                                     GroupInformationWasChanged
                                         { 
                                             TenantId = cmd.TenantId
@@ -166,10 +193,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | SetGroupMembershipInvitationPolicy cmd ->
                            if group.Data.IsInState(Started) then
-                                [| 
+                                Ok [| 
                                     GroupMembershipInvitationPolicyWasSet
                                         { 
                                             TenantId = cmd.TenantId
@@ -182,10 +209,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | SetGroupModerationPolicy cmd ->
                            if group.Data.IsInState(Started) then
-                                [| 
+                                Ok [| 
                                     GroupModerationPolicyWasSet
                                         { 
                                             TenantId = cmd.TenantId
@@ -203,10 +230,10 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
+                                Ok [||]
                         | DeleteGroup cmd -> 
                             if group.Data.IsInState(Started) then
-                                [| 
+                                Ok [| 
                                     GroupWasDeleted
                                         { 
                                             TenantId = cmd.TenantId
@@ -216,11 +243,16 @@ namespace Upiter.Model
                                         }
                                 |]
                             else
-                                [||]
-
-                    let! (next, position) = save envelope.RequestId group.ExpectedVersion events
-                    channel.Reply(position)
-                    return! loop { group with ExpectedVersion = next; Data = Group.Fold group.Data events }
+                                Ok [||]
+                    
+                    match decision with
+                    | Ok events ->
+                        let! (next, position) = save envelope.RequestId group.ExpectedVersion events
+                        channel.Reply(Ok(position))
+                        return! loop { group with ExpectedVersion = next; Data = Group.Fold group.Data events }
+                    | Error error ->
+                        channel.Reply(Error(error))
+                        return! loop group
                 }
 
                 async {
@@ -228,7 +260,7 @@ namespace Upiter.Model
                     return! loop group
                 }
 
-        type GroupRouter = MailboxProcessor<Envelope<Commands> * AsyncReplyChannel<Int64>>
+        type GroupRouter = MailboxProcessor<Envelope<Commands> * AsyncReplyChannel<Result<Int64, Errors>>>
         let spawnGroupRouter (reader: ReadFromStream) (appender: AppendToStream) (clock: IClock) : GroupRouter =
             let identify message =
                 match message with
@@ -247,11 +279,11 @@ namespace Upiter.Model
                     let identity = identify envelope.Message
                     match Map.tryFind identity groups with
                     | Some group ->
-                        log.Debug("GroupRouter: route to existing group {identity}", identity)
+                        log.Debug("GroupRouter: route to cached group {identity}", identity)
                         group.Post((envelope, channel))
                         return! loop groups
                     | None ->
-                        log.Debug("GroupRouter: route to new group {identity}", identity)
+                        log.Debug("GroupRouter: route to uncached group {identity}", identity)
                         let group = spawnGroupActor identity reader appender clock
                         group.Post((envelope, channel))
                         return! loop (Map.add identity group groups)
