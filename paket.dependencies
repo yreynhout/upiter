@@ -5,6 +5,7 @@ nuget Argu
 nuget FAKE
 nuget FSharp.Control.AsyncSeq
 nuget FSharp.Core
+nuget Giraffe
 nuget Newtonsoft.Json
 nuget Newtonsoft.Json.Schema
 nuget NodaTime
@@ -16,3 +17,4 @@ nuget Serilog.Sinks.File
 nuget SqlStreamStore
 nuget SqlStreamStore.MsSql
 nuget Suave
+nuget System.IdentityModel.Tokens.Jwt

@@ -55,6 +55,8 @@
     <Compile Include="Model/group.fs" />
     <Compile Include="Model/group-storage.fs" />
     <Compile Include="scheduler.fs" />
+    <Compile Include="app-problems.fs" />
+    <Compile Include="app-security.fs" />
     <Compile Include="app.fs" />
     <Compile Include="program.fs" />
     <None Include="App.config" />
@@ -120,8 +122,8 @@
   <Choose>
     <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
       <ItemGroup>
-        <Reference Include="Newtonsoft.Json">
-          <HintPath>..\..\packages\Newtonsoft.Json\lib\net45\Newtonsoft.Json.dll</HintPath>
+        <Reference Include="Microsoft.IdentityModel.Logging">
+          <HintPath>..\..\packages\Microsoft.IdentityModel.Logging\lib\net451\Microsoft.IdentityModel.Logging.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
@@ -134,6 +136,28 @@
         <Reference Include="System.Xml">
           <Paket>True</Paket>
         </Reference>
+        <Reference Include="Microsoft.IdentityModel.Tokens">
+          <HintPath>..\..\packages\Microsoft.IdentityModel.Tokens\lib\net451\Microsoft.IdentityModel.Tokens.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
+        <Reference Include="Newtonsoft.Json">
+          <HintPath>..\..\packages\Newtonsoft.Json\lib\net45\Newtonsoft.Json.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
         <Reference Include="NodaTime">
           <HintPath>..\..\packages\NodaTime\lib\net35-Client\NodaTime.dll</HintPath>
           <Private>True</Private>
@@ -213,6 +237,17 @@
       <ItemGroup>
         <Reference Include="Suave">
           <HintPath>..\..\packages\Suave\lib\net40\Suave.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
+        <Reference Include="System.IdentityModel.Tokens.Jwt">
+          <HintPath>..\..\packages\System.IdentityModel.Tokens.Jwt\lib\net451\System.IdentityModel.Tokens.Jwt.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

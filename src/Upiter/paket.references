@@ -11,3 +11,4 @@ Serilog.Sinks.File
 Suave
 Argu
 SqlStreamStore.MsSql
+System.IdentityModel.Tokens.Jwt

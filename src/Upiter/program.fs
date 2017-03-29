@@ -24,11 +24,13 @@ namespace Upiter
     module Program =
         type private ProgramArguments = 
         | [<Mandatory>][<Unique>] Port of int
+        | [<Mandatory>][<Unique>] ConnectionString of string
         with
             interface IArgParserTemplate with
                 member s.Usage =
                     match s with
                     | Port _ -> "specify a tcp port to listen on for inbound http traffic."
+                    | ConnectionString _ -> "specify a Microsoft Sql Server connection string to store events in."
 
         let private serverConfig (port: int) =
             { defaultConfig with
@@ -61,20 +63,26 @@ namespace Upiter
             httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
             let storeJsonSettings = JsonSerializerSettings()
 
-            let storeSettings = MsSqlStreamStoreSettings("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=upiter;Integrated Security=True;")
-            
-
             let parser = ArgumentParser.Create<ProgramArguments>()
             let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
             //Config
             let port = parsed.GetResult (<@ Port @>, 8083)
+            let connectionString = parsed.GetResult (<@ ConnectionString @>, "UseInMemoryStreamStore=True")
+            //Store selection
+            let selectStreamStore : IStreamStore = 
+                if connectionString = "UseInMemoryStreamStore=True" then 
+                    new InMemoryStreamStore() :> IStreamStore 
+                else 
+                    let storeSettings = 
+                        MsSqlStreamStoreSettings("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=upiter;Integrated Security=True;")
+                    let store = new MsSqlStreamStore(storeSettings)
+                    //yuck
+                    store.CreateSchema(true, Async.DefaultCancellationToken)
+                    |> Async.AwaitTask
+                    |> Async.RunSynchronously
+                    store :> IStreamStore
             //Server
-            using (new MsSqlStreamStore(storeSettings)) (fun store -> 
-                //yuck
-                store.CreateSchema(true, Async.DefaultCancellationToken)
-                |> Async.AwaitTask
-                |> Async.RunSynchronously
-
+            using (selectStreamStore) (fun store -> 
                 startWebServer (serverConfig port) (app httpJsonSettings store storeJsonSettings SystemClock.Instance)
             )
             0 // return an integer exit code
