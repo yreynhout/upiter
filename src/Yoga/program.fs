@@ -2,6 +2,8 @@ namespace Yoga
     open System
     open System.Runtime.Caching
 
+    open Argu
+
     open Serilog
     open Serilog.Configuration
     
@@ -17,8 +19,16 @@ namespace Yoga
     open SqlStreamStore
     
     module Program =
+        type private ProgramArguments = 
+        | [<Mandatory>][<Unique>] ConnectionString of string
+        with
+            interface IArgParserTemplate with
+                member s.Usage =
+                    match s with
+                    | ConnectionString _ -> "specify a Microsoft Sql Server connection string to retrieve events from."
+
         [<EntryPoint>]
-        let main argv =
+        let main args =
             let template = "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level}] {SourceContext} {Message}{NewLine}{Exception}"
             // Initialize Logging
             let logConfiguration = 
@@ -37,6 +47,21 @@ namespace Yoga
             Log.Logger <- logConfiguration
                             .MinimumLevel.Debug()
                             .CreateLogger()
+
+            //Config
+            let exiter = ProcessExiter()
+            let parser = ArgumentParser.Create<ProgramArguments>(errorHandler=exiter)
+            let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
+            let connectionString = parsed.GetResult (<@ ConnectionString @>)
+
+            let createStore : IStreamStore = 
+                let storeSettings = MsSqlStreamStoreSettings(connectionString)
+                let store = new MsSqlStreamStore(storeSettings)
+                //yuck
+                store.CreateSchema(true, Async.DefaultCancellationToken)
+                |> Async.AwaitTask
+                |> Async.RunSynchronously
+                store :> IStreamStore
 
             let contracts = 
                 [
@@ -57,7 +82,7 @@ namespace Yoga
                     yield! readlines ()
             }
 
-            using (new InMemoryStreamStore()) (
+            using (createStore) (
                 fun store -> 
                     Seeding.seed store 
                     |> Async.Start

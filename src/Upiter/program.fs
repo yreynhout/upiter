@@ -69,20 +69,17 @@ namespace Upiter
             let parser = ArgumentParser.Create<ProgramArguments>(errorHandler=exiter)
             let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
             let port = parsed.GetResult (<@ Port @>, 8081)
-            let connectionString = parsed.GetResult (<@ ConnectionString @>, "UseInMemoryStreamStore=True")
+            let connectionString = parsed.GetResult (<@ ConnectionString @>)
             let authenticationIniFile = parsed.GetResult (<@ AuthenticationIniFile @>, "authentication.ini")
             
-            let selectStreamStore : IStreamStore = 
-                if connectionString = "UseInMemoryStreamStore=True" then 
-                    new InMemoryStreamStore() :> IStreamStore 
-                else 
-                    let storeSettings = MsSqlStreamStoreSettings(connectionString)
-                    let store = new MsSqlStreamStore(storeSettings)
-                    //yuck
-                    store.CreateSchema(true, Async.DefaultCancellationToken)
-                    |> Async.AwaitTask
-                    |> Async.RunSynchronously
-                    store :> IStreamStore
+            let createStore : IStreamStore = 
+                let storeSettings = MsSqlStreamStoreSettings(connectionString)
+                let store = new MsSqlStreamStore(storeSettings)
+                //yuck
+                store.CreateSchema(true, Async.DefaultCancellationToken)
+                |> Async.AwaitTask
+                |> Async.RunSynchronously
+                store :> IStreamStore
             
             let authenticationOptions : JwtBearerAuthenticationOptions =
                 let parser = FileIniDataParser()
@@ -95,7 +92,7 @@ namespace Upiter
                 }
 
             //Server
-            using (selectStreamStore) (fun store -> 
+            using (createStore) (fun store -> 
                 let httpJsonSettings = JsonSerializerSettings()
                 httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
                 httpJsonSettings.NullValueHandling <- NullValueHandling.Ignore
