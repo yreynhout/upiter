@@ -2,6 +2,7 @@ namespace Upiter
 
     open System
     open System.Security.Claims
+    open System.Text
     open Microsoft.IdentityModel.Tokens
     open System.IdentityModel.Tokens.Jwt
 
@@ -14,66 +15,58 @@ namespace Upiter
     open Suave.Successful
     open Suave.Writers
 
-    open Upiter.AppProblems
-    
-    module AppSecurity = ()
-        // type JwtBearerAuthenticationOptions = {
-        //     Audience: string
-        //     IssuerSecret: string
-        //     Issuer: string
-        // }
+    module AppSecurity =
+        type JwtBearerAuthenticationOptions = {
+            Audience: string
+            IssuerSecret: string
+            Issuer: string
+        }
 
-        // let verifyAuthorizationToken token options : Choice<ClaimsPrincipal, HttpProblemDetails> =
-        //     let toSecurityKey secret =
-        //         let decodeBase64 (secret: string) =
-        //             let pad text =
-        //                 let padding = 3 - ((String.length text + 3) % 4)
-        //                 if padding = 0 then text else (text + String('=', padding))
-        //             Convert.FromBase64String(pad(secret.Replace('-', '+').Replace('_', '/')))
+        let private verifyAuthorizationToken token authenticationOptions : Result<ClaimsPrincipal, HttpProblemDetails> =
+            let toSecurityKey (secret: string) =
+                //Secrets are now UTF-8 instead of Base64 over at Auth0.com
+                SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)) :> SecurityKey
 
-        //         SymmetricSecurityKey(decodeBase64(secret)) :> SecurityKey
-
-        //     let composeTokenValidationParameters =
-        //         let parameters = TokenValidationParameters()
-        //         //Validation parameterization
-        //         parameters.ValidAudience <- options.Audience
-        //         parameters.ValidIssuer <- options.Issuer
-        //         parameters.IssuerSigningKey <- toSecurityKey(options.IssuerSecret)
-        //         //What to validate
-        //         parameters.ValidateLifetime <- true
-        //         parameters.ValidateIssuerSigningKey <- true
-        //         parameters.ValidateAudience <- true
-        //         parameters.ValidateIssuer <- true
+            let composeTokenValidationParameters =
+                let parameters = TokenValidationParameters()
+                //Validation parameterization
+                parameters.ValidAudience <- authenticationOptions.Audience
+                parameters.ValidIssuer <- authenticationOptions.Issuer
+                parameters.IssuerSigningKey <- toSecurityKey(authenticationOptions.IssuerSecret)
+                //What to validate
+                parameters.ValidateLifetime <- true
+                parameters.ValidateIssuerSigningKey <- true
+                parameters.ValidateAudience <- true
+                parameters.ValidateIssuer <- true
+                //Return
+                parameters
                 
-        //         parameters
-                
-        //     try
-        //         let handler = JwtSecurityTokenHandler()
-        //         let principal =
-        //             handler.ValidateToken(token, composeTokenValidationParameters, ref null)
-        //         principal |> Choice1Of2
-        //     with
-        //         | ex -> Choice2Of2 { HttpProblemDetails.BearerTokenMismatch with Title = ex.Message }
+            try
+                let handler = JwtSecurityTokenHandler()
+                let principal =
+                    handler.ValidateToken(token, composeTokenValidationParameters, ref null)
+                principal |> Ok
+            with
+                | ex -> Error { HttpProblemDetails.BearerTokenNotValid with Details = Some(ex.Message) }
 
-        // let authorize options (settings: JsonSerializerSettings) next : WebPart =
-        //     fun (context : HttpContext) -> async {
-        //         let authorizationHeader = getHeader "Authorization" context
-        //         return! 
-        //             match (authorizationHeader |> Seq.length) with
-        //             | 0 -> 
-        //                 (UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.MissingAuthorizationHeader, settings)) 
-        //                 >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + options.Issuer + "\", scope=\"openid profile\"")) context
-        //             | _ ->
-        //                 match (authorizationHeader |> Seq.exactlyOne |> fun item -> item.StartsWith("Bearer ")) with
-        //                 | false -> (UNAUTHORIZED (HttpProblemDetails.AuthorizationHeaderMismatch |> Json.serialize |> Json.format) >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + options.Issuer + "\", scope=\"openid profile\"")) context
-        //                 | true -> 
-        //                     match (authorizationHeader |> Seq.exactlyOne |> fun item -> verifyAuthorizationToken (item.Substring(7)) options) with
-        //                     | Choice1Of2 principal ->
-        //                         next { context with userState = context.userState.Add("vsl.RequestUser", principal) }
-        //                     | Choice2Of2 error -> 
-        //                         match error.StatusCode with
-        //                         | 400 -> BAD_REQUEST (error |> Json.serialize |> Json.format) context
-        //                         | 401 -> (UNAUTHORIZED (error |> Json.serialize |> Json.format) >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + options.Issuer + "\", scope=\"openid profile\"")) context  
-        //                         | 403 -> FORBIDDEN (error |> Json.serialize |> Json.format) context
-        //                         | _ -> BAD_REQUEST (error |> Json.serialize |> Json.format) context
-        //     }
+        let authorize (authenticationOptions: JwtBearerAuthenticationOptions) (httpJsonSettings: JsonSerializerSettings) (next: WebPart) : WebPart =
+             fun (context : HttpContext) -> async {
+                 let authorizationHeaders = getHeader "Authorization" context |> Seq.toArray
+                 let continuation =
+                    if Array.length authorizationHeaders <> 1 then
+                        (UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.MissingOrTooManyAuthorizationHeaders, httpJsonSettings)) 
+                        >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                    else
+                        let authorizationHeader = Array.exactlyOne authorizationHeaders
+                        if not(authorizationHeader.StartsWith("Bearer ")) then
+                            (UNAUTHORIZED (JsonConvert.SerializeObject(HttpProblemDetails.AuthorizationHeaderMismatch, httpJsonSettings)) 
+                            >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                        else 
+                            match verifyAuthorizationToken (authorizationHeader.Substring(7)) authenticationOptions with
+                            | Ok principal ->
+                                setUserData "PlatformMember" principal >=> next
+                            | Error problem ->
+                                (UNAUTHORIZED (JsonConvert.SerializeObject(problem, httpJsonSettings)) 
+                                >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")) 
+                return! continuation context
+             }

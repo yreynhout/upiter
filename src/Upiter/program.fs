@@ -1,7 +1,9 @@
 namespace Upiter
     open System
+    open System.Text
 
     open Argu
+    open IniParser
 
     open Serilog
     open Serilog.Configuration
@@ -20,17 +22,20 @@ namespace Upiter
     open Suave.Web
 
     open Upiter.App
+    open Upiter.AppSecurity
     
     module Program =
         type private ProgramArguments = 
         | [<Mandatory>][<Unique>] Port of int
         | [<Mandatory>][<Unique>] ConnectionString of string
+        | [<Mandatory>][<Unique>] AuthenticationIniFile of string
         with
             interface IArgParserTemplate with
                 member s.Usage =
                     match s with
                     | Port _ -> "specify a tcp port to listen on for inbound http traffic."
                     | ConnectionString _ -> "specify a Microsoft Sql Server connection string to store events in."
+                    | AuthenticationIniFile _ -> "specify the ini file containing the audience, issuer and issuer secret key for OpenID Connect authentication."
 
         let private serverConfig (port: int) =
             { defaultConfig with
@@ -59,30 +64,41 @@ namespace Upiter
                             .MinimumLevel.Debug()
                             .CreateLogger()
 
-            let httpJsonSettings = JsonSerializerSettings()
-            httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
-            let storeJsonSettings = JsonSerializerSettings()
-
-            let parser = ArgumentParser.Create<ProgramArguments>()
-            let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
             //Config
-            let port = parsed.GetResult (<@ Port @>, 8083)
+            let exiter = ProcessExiter()
+            let parser = ArgumentParser.Create<ProgramArguments>(errorHandler=exiter)
+            let parsed = parser.Parse(args, ConfigurationReader.FromAppSettings())
+            let port = parsed.GetResult (<@ Port @>, 8081)
             let connectionString = parsed.GetResult (<@ ConnectionString @>, "UseInMemoryStreamStore=True")
-            //Store selection
+            let authenticationIniFile = parsed.GetResult (<@ AuthenticationIniFile @>, "authentication.ini")
+            
             let selectStreamStore : IStreamStore = 
                 if connectionString = "UseInMemoryStreamStore=True" then 
                     new InMemoryStreamStore() :> IStreamStore 
                 else 
-                    let storeSettings = 
-                        MsSqlStreamStoreSettings("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=upiter;Integrated Security=True;")
+                    let storeSettings = MsSqlStreamStoreSettings(connectionString)
                     let store = new MsSqlStreamStore(storeSettings)
                     //yuck
                     store.CreateSchema(true, Async.DefaultCancellationToken)
                     |> Async.AwaitTask
                     |> Async.RunSynchronously
                     store :> IStreamStore
+            
+            let authenticationOptions : JwtBearerAuthenticationOptions =
+                let parser = FileIniDataParser()
+                let data = parser.ReadFile(authenticationIniFile, Encoding.UTF8)
+                let section = data.Item("Authentication")
+                {
+                    Audience = section.Item("Audience")
+                    Issuer = section.Item("Issuer")
+                    IssuerSecret = section.Item("IssuerSecret")
+                }
+
             //Server
             using (selectStreamStore) (fun store -> 
-                startWebServer (serverConfig port) (app httpJsonSettings store storeJsonSettings SystemClock.Instance)
+                let httpJsonSettings = JsonSerializerSettings()
+                httpJsonSettings.ContractResolver <- CamelCasePropertyNamesContractResolver()
+                let storeJsonSettings = JsonSerializerSettings()    
+                startWebServer (serverConfig port) (app authenticationOptions httpJsonSettings store storeJsonSettings SystemClock.Instance)
             )
             0 // return an integer exit code

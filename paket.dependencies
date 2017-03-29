@@ -5,9 +5,8 @@ nuget Argu
 nuget FAKE
 nuget FSharp.Control.AsyncSeq
 nuget FSharp.Core
-nuget Giraffe
+nuget Ini-Parser
 nuget Newtonsoft.Json
-nuget Newtonsoft.Json.Schema
 nuget NodaTime
 nuget Serilog
 nuget Serilog.Extras.FSharp

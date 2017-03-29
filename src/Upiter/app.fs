@@ -18,7 +18,9 @@ namespace Upiter
     open Suave.Operators
     open Suave.RequestErrors
     open Suave.Successful
-    
+
+    open Upiter.AppSecurity
+
     module App =
         let private log = Log.ForContext(Constants.SourceContextPropertyName, "App")
 
@@ -90,16 +92,17 @@ namespace Upiter
                         context
             }
 
-        let app (httpJsonSettings: JsonSerializerSettings) (store: IStreamStore) (storeJsonSettings: JsonSerializerSettings) (clock: IClock) =
+        let app (authenticationOptions: JwtBearerAuthenticationOptions) (httpJsonSettings: JsonSerializerSettings) (store: IStreamStore) (storeJsonSettings: JsonSerializerSettings) (clock: IClock) =
             let router = 
                 spawnGroupRouter 
                     (Model.GroupStorage.reader store storeJsonSettings) 
                     (Model.GroupStorage.appender store storeJsonSettings) 
                     clock
 
-            choose 
-                [
-                    POST >=> choose [
-                        pathStarts "/api/group" >=> handleGroupCommand router httpJsonSettings
+            authorize authenticationOptions httpJsonSettings <|
+                choose 
+                    [
+                        POST >=> choose [
+                            pathStarts "/api/group" >=> handleGroupCommand router httpJsonSettings
+                        ]
                     ]
-                ]

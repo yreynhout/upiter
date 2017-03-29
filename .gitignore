@@ -10,6 +10,8 @@ obj
 bin
 *.exe
 scripts
+authentication.ini
+run.bat
 
 ### Linux ###
 *~

@@ -40,6 +40,10 @@
     <Reference Include="System.Runtime.Caching" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
+    <None Include="authentication.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Compile Include="Messages/platformmember-contracts.fs" />
     <Compile Include="Messages/membership-contracts.fs" />
     <Compile Include="Messages/ownerinvitation-contracts.fs" />
@@ -55,11 +59,11 @@
     <Compile Include="Model/group.fs" />
     <Compile Include="Model/group-storage.fs" />
     <Compile Include="scheduler.fs" />
-    <Compile Include="app-problems.fs" />
+    <Compile Include="http-problem-details.fs" />
     <Compile Include="app-security.fs" />
     <Compile Include="app.fs" />
     <Compile Include="program.fs" />
-    <None Include="App.config" />
+    
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Choose>
@@ -113,6 +117,17 @@
       <ItemGroup>
         <Reference Include="FSharp.Core">
           <HintPath>..\..\packages\FSharp.Core\lib\net45\FSharp.Core.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
+        <Reference Include="INIFileParser">
+          <HintPath>..\..\packages\ini-parser\lib\net20\INIFileParser.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
