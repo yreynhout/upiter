@@ -20,6 +20,7 @@ namespace Upiter
             Audience: string
             IssuerSecret: string
             Issuer: string
+            RequiredClaims: string[]
         }
 
         [<Literal>]
@@ -52,7 +53,7 @@ namespace Upiter
             with
                 | ex -> Error { HttpProblemDetails.BearerTokenNotValid with Details = ex.Message }
 
-        let authorize (authenticationOptions: JwtBearerAuthenticationOptions) (httpJsonSettings: JsonSerializerSettings) (next: WebPart) : WebPart =
+        let authorizeRequest (authenticationOptions: JwtBearerAuthenticationOptions) (httpJsonSettings: JsonSerializerSettings) (next: WebPart) : WebPart =
              fun (context : HttpContext) -> async {
                  let authorizationHeaders = getHeader "Authorization" context |> Seq.toArray
                  let continuation =
@@ -69,7 +70,22 @@ namespace Upiter
                         else 
                             match verifyAuthorizationToken (authorizationHeader.Substring(7)) authenticationOptions with
                             | Ok principal ->
-                                setUserData PlatformMemberKey principal >=> next
+                                let missingClaims =
+                                    authenticationOptions.RequiredClaims
+                                    |> Array.filter (
+                                        fun requiredClaim -> 
+                                            not(
+                                                principal.Claims
+                                                |> Seq.exists (fun claim -> claim.Type = requiredClaim)
+                                            )
+                                    )
+                                if Array.isEmpty missingClaims then
+                                    setUserData PlatformMemberKey principal >=> next
+                                else
+                                    let details = sprintf "Missing claims: %s" (String.Join(",", missingClaims))
+                                    (setMimeType "application/problem+json"
+                                    >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")
+                                    >=> UNAUTHORIZED (JsonConvert.SerializeObject({ HttpProblemDetails.MissingClaims with Details = details }, httpJsonSettings)))
                             | Error problem ->
                                 (setMimeType "application/problem+json"
                                 >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")

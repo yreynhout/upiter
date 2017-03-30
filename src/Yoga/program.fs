@@ -13,7 +13,6 @@ namespace Yoga
     open Upiter.Messages.GroupContracts
     open Yoga.Scheduler
     open Yoga.Projections
-    open Yoga.Seeding
     
     open Newtonsoft.Json
     open SqlStreamStore
@@ -83,9 +82,7 @@ namespace Yoga
             }
 
             using (createStore) (
-                fun store -> 
-                    Seeding.seed store 
-                    |> Async.Start
+                fun store ->
 
                     using (new MemoryCache("Groups")) (
                         fun cache ->

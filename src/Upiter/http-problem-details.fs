@@ -35,7 +35,15 @@ namespace Upiter
                 Details  = null
                 Instance = null
             }
-        static member JsonParseError = 
+        static member MissingClaims = 
+            {
+                Status   = 403
+                Type     = new Uri("https://tools.ietf.org/html/rfc6750#section-3.1")
+                Title    = "The authorization header's bearer json web token does not contain the required claims."
+                Details  = null
+                Instance = null
+            }
+        static member JsonParseFailure = 
             { 
                 Status   = 400
                 Type     = new Uri("https://tools.ietf.org/html/rfc7231#section-6.5.1")
@@ -43,7 +51,7 @@ namespace Upiter
                 Details  = null
                 Instance = null
             }
-        static member NotAuthorizedError = 
+        static member NotAuthorized = 
             { 
                 Status   = 403
                 Type     = new Uri("https://tools.ietf.org/html/rfc7231#section-6.5.3")

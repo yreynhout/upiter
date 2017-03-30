@@ -63,13 +63,13 @@ namespace Upiter.Model
                 return (initialPage.LastStreamVersion, (AsyncSeq.unfoldAsync generator (Some initialPage)))
         }
 
-        let appender (store: IStreamStore) (settings: JsonSerializerSettings) (identity: GroupIdentity) (request: Guid) (expected: Int32) (events: Events[]) : Async<AppendToStreamResult> = async {
+        let appender (store: IStreamStore) (settings: JsonSerializerSettings) (identity: GroupIdentity) (command: Guid) (expected: Int32) (events: Events[]) : Async<AppendToStreamResult> = async {
             let stream = StreamId(sprintf "%d~%s" identity.TenantId (identity.GroupId.ToString("N")))
             log.Debug("Appending to stream {name}", stream.ToString())
             let messages =
                 events
                 |> Array.mapi (fun index message -> 
-                    let messageId = MessageIdentity.generate request index
+                    let messageId = MessageIdentity.generate command index
                     let (messageType, messageJson, ``when``, who) = 
                         match message with
                         | PrivateGroupWasStarted event -> 
@@ -89,7 +89,7 @@ namespace Upiter.Model
                     let metadataJson =
                         JsonConvert.SerializeObject(
                             dict [
-                                "Request", (request.ToString("N"))
+                                "Command", (command.ToString("N"))
                                 "When", (``when``.ToString())
                                 "Who", (who.ToString("N"))
                                 "Machine", Environment.MachineName

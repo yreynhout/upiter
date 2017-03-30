@@ -1,10 +1,13 @@
-namespace Yoga
+namespace Upiter
     open System
     open Upiter.Messages
     open Upiter.Messages.GroupContracts
 
+    open NodaTime
+
     open SqlStreamStore
     open SqlStreamStore.Streams
+
     open Newtonsoft.Json
     open Newtonsoft.Json.Linq
     
@@ -71,7 +74,8 @@ namespace Yoga
             "Purpose": "dui, semper et, lacinia vitae, sodales at, velit. Pellentesque ultricies dignissim lacus. Aliquam rutrum lorem ac risus. Morbi metus. Vivamus euismod urna. Nullam lobortis quam a felis ullamcorper viverra. Maecenas iaculis aliquet diam. Sed diam lorem, auctor"
         }
     ]""")
-        let seed (store: IStreamStore) = async {
+        let seed (store: IStreamStore) (storeJsonSettings: JsonSerializerSettings) (clock: IClock) = async {
+            //TODO: Appending should happen with the group's append method.
             for index = 0 to 1000 do
                 let groupData = data.Item(index % 9)
                 let groupId = Guid.NewGuid()
@@ -83,7 +87,7 @@ namespace Yoga
                             Purpose = groupData.Item("Purpose").ToString()
                             PlatformMemberId = Guid.NewGuid()
                             TenantId = index % 3 
-                            When = 0L // DateTimeOffset.UtcNow
+                            When = clock.Now.Ticks
                         }
                     store.AppendToStream(
                             groupId.ToString("N"),
@@ -103,7 +107,7 @@ namespace Yoga
                             Purpose = groupData.Item("Purpose").ToString()
                             PlatformMemberId = Guid.NewGuid()
                             TenantId = index % 5 
-                            When = 0L // DateTimeOffset.UtcNow
+                            When = clock.Now.Ticks
                         }
                     store.AppendToStream(
                             groupId.ToString("N"),

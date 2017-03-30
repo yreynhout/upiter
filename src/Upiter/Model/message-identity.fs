@@ -3,7 +3,7 @@ namespace Upiter.Model
     open System.Security.Cryptography
 
     module MessageIdentity =
-        let generate (request: Guid) (index: Int32) : Guid =
+        let generate (command: Guid) (index: Int32) : Guid =
             let swapByteOrderPairs (bytes: byte[]) : byte[] =
                 Array.mapi (fun index value -> 
                     match index with
@@ -18,7 +18,7 @@ namespace Upiter.Model
                     | _ -> Array.get bytes index
                 ) bytes
             let namespaceBytes = swapByteOrderPairs (Guid("dbe13a48ebe5444183cb92e0da52f1e8").ToByteArray())
-            let inputBytes = Array.concat [ request.ToByteArray(); BitConverter.GetBytes(index) ]
+            let inputBytes = Array.concat [ command.ToByteArray(); BitConverter.GetBytes(index) ]
             using (SHA1.Create()) (fun algorithm -> 
                 algorithm.TransformBlock(namespaceBytes, 0, namespaceBytes.Length, null, 0) |> ignore
                 algorithm.TransformFinalBlock(inputBytes, 0, inputBytes.Length) |> ignore

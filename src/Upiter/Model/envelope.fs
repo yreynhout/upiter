@@ -1,10 +1,11 @@
 namespace Upiter.Model
     open System
     open System.Security.Claims
+    open Upiter.Security
 
-    type Envelope<'TMessage> =
+    type Envelope<'TCommand> =
         {
-            RequestId       : Guid
-            PlatformMember  : ClaimsPrincipal
-            Message         : 'TMessage
+            CommandId   : Guid
+            Visitor     : PlatformVisitor
+            Command     : 'TCommand
         }

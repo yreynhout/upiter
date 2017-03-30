@@ -89,6 +89,7 @@ namespace Upiter
                     Audience = section.Item("Audience")
                     Issuer = section.Item("Issuer")
                     IssuerSecret = section.Item("IssuerSecret")
+                    RequiredClaims = [| Security.Claims.Tenant |]
                 }
 
             //Server
@@ -98,6 +99,9 @@ namespace Upiter
                 httpJsonSettings.NullValueHandling <- NullValueHandling.Ignore
                 let storeJsonSettings = JsonSerializerSettings()    
                 storeJsonSettings.NullValueHandling <- NullValueHandling.Ignore
+
+                Seeding.seed store storeJsonSettings SystemClock.Instance |> Async.Start
+                
                 startWebServer (serverConfig port) (app authenticationOptions httpJsonSettings store storeJsonSettings SystemClock.Instance)
             )
             0 // return an integer exit code

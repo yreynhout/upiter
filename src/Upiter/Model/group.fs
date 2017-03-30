@@ -8,7 +8,7 @@ namespace Upiter.Model
     open Serilog.Core
 
     open Upiter.Messages.GroupContracts
-    open Upiter.Model.Claims
+    open Upiter.Security
 
     module Group =
         let private log = Log.ForContext(Constants.SourceContextPropertyName, "Group")
@@ -47,7 +47,7 @@ namespace Upiter.Model
         type AppendToStreamResult = 
             (* next expected version *)Int32 * (* commit position *)Int64
         type AppendToStream = 
-            (* stream *)GroupIdentity -> (* request *) Guid -> (* expected version *)Int32 -> (* events *)Events[] -> (* result *)Async<AppendToStreamResult>
+            (* stream *)GroupIdentity -> (* command *) Guid -> (* expected version *)Int32 -> (* events *)Events[] -> (* result *)Async<AppendToStreamResult>
         
         type private States =
         | Initial
@@ -131,11 +131,11 @@ namespace Upiter.Model
             MailboxProcessor.Start <| fun inbox ->
                 let rec loop (group: Aggregate) = async {
                     let! (envelope, channel) = inbox.Receive()
-                    log.Debug("GroupActor: {message}", envelope.Message)
+                    log.Debug("GroupActor: {message}", envelope.Command)
                     let decision : Result<Events[], Errors> =
-                        match envelope.Message with
+                        match envelope.Command with
                         | StartPrivateGroup cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator()) then
+                            if not(envelope.Visitor.IsPlatformAdministrator()) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator.")
                             elif group.Data.IsInState(Initial) then
                                 Ok [| 
@@ -152,7 +152,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | StartPublicGroup cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator()) then
+                            if not(envelope.Visitor.IsPlatformAdministrator()) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator.")
                             elif group.Data.IsInState(Initial) then
                                 Ok [| 
@@ -169,7 +169,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | RenameGroup cmd -> 
-                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                            if not(envelope.Visitor.IsPlatformAdministrator() || envelope.Visitor.IsGroupOwner(cmd.GroupId)) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
                             elif group.Data.IsInState(Started) then
                                 Ok [| 
@@ -185,7 +185,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | ChangeGroupInformation cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                            if not(envelope.Visitor.IsPlatformAdministrator() || envelope.Visitor.IsGroupOwner(cmd.GroupId)) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
                             elif group.Data.IsInState(Started) then
                                 Ok [| 
@@ -201,7 +201,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | SetGroupMembershipInvitationPolicy cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                            if not(envelope.Visitor.IsPlatformAdministrator() || envelope.Visitor.IsGroupOwner(cmd.GroupId)) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
                             elif group.Data.IsInState(Started) then
                                 Ok [| 
@@ -219,7 +219,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | SetGroupModerationPolicy cmd ->
-                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                            if not(envelope.Visitor.IsPlatformAdministrator() || envelope.Visitor.IsGroupOwner(cmd.GroupId)) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
                             elif group.Data.IsInState(Started) then
                                 Ok [| 
@@ -242,7 +242,7 @@ namespace Upiter.Model
                             else
                                 Ok [||]
                         | DeleteGroup cmd -> 
-                            if not(envelope.PlatformMember.IsPlatformAdministrator() || envelope.PlatformMember.IsGroupOwner(cmd.GroupId)) then
+                            if not(envelope.Visitor.IsPlatformAdministrator() || envelope.Visitor.IsGroupOwner(cmd.GroupId)) then
                                 Error (Errors.NotAuthorized "The platform member does not have the role of platform administrator nor the role of group owner.")
                             elif group.Data.IsInState(Started) then
                                 Ok [| 
@@ -259,7 +259,7 @@ namespace Upiter.Model
                     
                     match decision with
                     | Ok events ->
-                        let! (next, position) = save envelope.RequestId group.ExpectedVersion events
+                        let! (next, position) = save envelope.CommandId group.ExpectedVersion events
                         channel.Reply(Ok(position))
                         return! loop { group with ExpectedVersion = next; Data = Group.Fold group.Data events }
                     | Error error ->
@@ -287,8 +287,8 @@ namespace Upiter.Model
             MailboxProcessor.Start <| fun inbox ->
                 let rec loop (groups: Map<GroupIdentity, GroupActor>) = async {
                     let! (envelope, channel) = inbox.Receive()
-                    log.Debug("GroupRouter: {message}", envelope.Message)
-                    let identity = identify envelope.Message
+                    log.Debug("GroupRouter: {message}", envelope.Command)
+                    let identity = identify envelope.Command
                     match Map.tryFind identity groups with
                     | Some group ->
                         log.Debug("GroupRouter: route to cached group {identity}", identity)

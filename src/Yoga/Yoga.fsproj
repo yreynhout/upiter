@@ -48,7 +48,6 @@
   <ItemGroup>
     <None Include="App.config" />
     <Compile Include="scheduler.fs" />
-    <Compile Include="seeding.fs" />
     <Compile Include="Projections/envelope.fs" />
     <Compile Include="Projections/projection.fs" />
     <Compile Include="Projections/projectionhost.fs" />

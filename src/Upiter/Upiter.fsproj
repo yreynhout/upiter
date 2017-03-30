@@ -54,8 +54,9 @@
     <Compile Include="Messages/moderation-contracts.fs" />
     <Compile Include="Messages/comment-contracts.fs" />
     <Compile Include="Messages/poll-contracts.fs" />
+    <Compile Include="Security/claims.fs" />
+    <Compile Include="Security/platform-visitor.fs" />
     <Compile Include="Model/envelope.fs" />
-    <Compile Include="Model/claims.fs" />
     <Compile Include="Model/message-identity.fs" />
     <Compile Include="Model/group.fs" />
     <Compile Include="Model/group-storage.fs" />
@@ -63,6 +64,7 @@
     <Compile Include="http-problem-details.fs" />
     <Compile Include="app-security.fs" />
     <Compile Include="app.fs" />
+    <Compile Include="seeding.fs" />
     <Compile Include="program.fs" />
     
   </ItemGroup>
