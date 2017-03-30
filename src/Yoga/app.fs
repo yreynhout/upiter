@@ -61,7 +61,7 @@ namespace Yoga
                             builder.Append(sprintf "%02X" value)
                     ) (StringBuilder())
 
-                let etag = builder.ToString()
+                let etag = sprintf "W/\"%s\"" (builder.ToString())
 
                 let ifNoneMatch = Suave.Headers.getHeader "If-None-Match" context
                 if ifNoneMatch |> Seq.exists (fun header -> header = etag) then
@@ -84,7 +84,7 @@ namespace Yoga
                 match cache |> Seq.tryFind (fun item -> item.Key = key) with
                 | Some item ->
                     let document = item.Value :?> GroupDocument
-                    let etag = document.Position.ToString()
+                    let etag = sprintf "W/\"%s\"" (document.Position.ToString())
                     let ifNoneMatch = Suave.Headers.getHeader "If-None-Match" context
                     if ifNoneMatch |> Seq.exists (fun header -> header = etag) then
                         return! (
