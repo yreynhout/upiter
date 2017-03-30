@@ -4,8 +4,9 @@ Upiter is an online messaging platform written in F# using patterns such as CQRS
 
 # Core Concepts
 
-- Platform Members: People who are a member of the platform. In layman terms that means people who have signed up for the platform.
-- Platform Guests: People who haven't yet signed up, the visitors or passers-by that still need to be _converted_, or the platform members who, for all intents, which to stay anonymous during a particular interaction with the platform. Who knows, right?
+- Platform Visitors: People that visit the platform.
+- Platform Members: People who have signed up for the platform and are thus a member of the platform.
+- Platform Guests: People who haven't yet signed up, the visitors or passers-by that still need to be _converted_, or the platform members who, for all intents, wish to stay anonymous during a particular interaction with the platform. Who knows, right?
 - Platform Administrators: People with great power within the scope of a particular tenant.
 
 - Group Members: People that became member of a group either thru invitation or by request.
