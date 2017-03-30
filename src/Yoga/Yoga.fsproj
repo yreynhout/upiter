@@ -47,11 +47,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="authentication.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Compile Include="scheduler.fs" />
     <Compile Include="Projections/envelope.fs" />
     <Compile Include="Projections/projection.fs" />
     <Compile Include="Projections/projectionhost.fs" />
     <Compile Include="Projections/subscriptionhost.fs" />
+    <Compile Include="app.fs" />
     <Compile Include="program.fs" />
   </ItemGroup>
   <Target Name="Yoga">
@@ -110,6 +114,17 @@
       <ItemGroup>
         <Reference Include="FSharp.Core">
           <HintPath>..\..\packages\FSharp.Core\lib\net45\FSharp.Core.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
+        <Reference Include="INIFileParser">
+          <HintPath>..\..\packages\ini-parser\lib\net20\INIFileParser.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>
@@ -201,6 +216,17 @@
       <ItemGroup>
         <Reference Include="SqlStreamStore.MsSql">
           <HintPath>..\..\packages\SqlStreamStore.MsSql\lib\net46\SqlStreamStore.MsSql.dll</HintPath>
+          <Private>True</Private>
+          <Paket>True</Paket>
+        </Reference>
+      </ItemGroup>
+    </When>
+  </Choose>
+  <Choose>
+    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.6.2'">
+      <ItemGroup>
+        <Reference Include="Suave">
+          <HintPath>..\..\packages\Suave\lib\net40\Suave.dll</HintPath>
           <Private>True</Private>
           <Paket>True</Paket>
         </Reference>

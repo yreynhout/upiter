@@ -10,3 +10,5 @@ Serilog.Sinks.Async
 Serilog.Sinks.File
 Argu
 SqlStreamStore.MsSql
+Suave
+Ini-Parser

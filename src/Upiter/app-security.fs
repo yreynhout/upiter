@@ -85,7 +85,7 @@ namespace Upiter
                                     let details = sprintf "Missing claims: %s" (String.Join(",", missingClaims))
                                     (setMimeType "application/problem+json"
                                     >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")
-                                    >=> UNAUTHORIZED (JsonConvert.SerializeObject({ HttpProblemDetails.MissingClaims with Details = details }, httpJsonSettings)))
+                                    >=> FORBIDDEN (JsonConvert.SerializeObject({ HttpProblemDetails.MissingClaims with Details = details }, httpJsonSettings)))
                             | Error problem ->
                                 (setMimeType "application/problem+json"
                                 >=> setHeader "WWW-Authenticate" ("Bearer realm=\"" + authenticationOptions.Issuer + "\", scope=\"openid profile\"")

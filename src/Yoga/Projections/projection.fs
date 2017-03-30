@@ -5,6 +5,8 @@ namespace Yoga.Projections
     open Upiter.Messages
     open Upiter.Messages.GroupContracts
 
+    open Newtonsoft.Json
+
     module Projection =
 
         type GroupAccessibility = Private = 0 | Public = 1
@@ -35,6 +37,7 @@ namespace Yoga.Projections
                 Accessibility              : GroupAccessibility
                 MembershipInvitationPolicy : MembershipInvitationPolicy
                 ModerationPolicy           : ModerationPolicy
+                [<JsonIgnore>] Position    : Int64
             }
         
         type private ProjectionEvents =
@@ -57,9 +60,20 @@ namespace Yoga.Projections
                 | :? GroupWasDeleted                       as msg -> Some (GroupWasDeleted msg)
                 | _ -> None
 
+        let private identify message =
+            match message with
+            | PublicGroupWasStarted msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | PrivateGroupWasStarted msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | GroupWasRenamed msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | GroupInformationWasChanged msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | GroupMembershipInvitationPolicyWasSet msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | GroupModerationPolicyWasSet msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            | GroupWasDeleted msg -> sprintf "group~%d~%s" msg.TenantId (msg.GroupId.ToString("N"))
+            
         let instance (cache: MemoryCache) (envelope: Envelope) =
             match ProjectionEvents.FromEnvelope envelope with
             | Some message ->
+                let key = identify message
                 match message with
                 | PublicGroupWasStarted msg -> 
                     let document = 
@@ -87,8 +101,9 @@ namespace Yoga.Projections
                                     RequireModerationAsOfImageCount= 0
                                     RequireModerationAsOfMediaCount= 0
                                 }
+                            Position = envelope.AllStreamPosition
                         }
-                    let item = CacheItem(msg.GroupId.ToString("N"), document)
+                    let item = CacheItem(key, document)
                     cache.Add(item, CacheItemPolicy()) |> ignore
                 | PrivateGroupWasStarted msg -> 
                     let document = 
@@ -116,45 +131,60 @@ namespace Yoga.Projections
                                     RequireModerationAsOfImageCount= 0
                                     RequireModerationAsOfMediaCount= 0
                                 }
+                            Position = envelope.AllStreamPosition
                         }
-                    let item = CacheItem(msg.GroupId.ToString("N"), document)
+                    let item = CacheItem(key, document)
                     cache.Add(item, CacheItemPolicy()) |> ignore
                 | GroupWasRenamed msg ->
-                    let item = cache.GetCacheItem(msg.GroupId.ToString("N"))
-                    let document = item.Value :?> GroupDocument
-                    item.Value <- { document with Name = msg.Name }
-                | GroupInformationWasChanged msg ->
-                    let item = cache.GetCacheItem(msg.GroupId.ToString("N"))
-                    let document = item.Value :?> GroupDocument
-                    item.Value <- { document with Purpose = msg.Purpose }
-                | GroupMembershipInvitationPolicyWasSet msg ->
-                    let item = cache.GetCacheItem(msg.GroupId.ToString("N"))
+                    let item = cache.GetCacheItem(key)
                     let document = item.Value :?> GroupDocument
                     item.Value <- 
-                        { document with MembershipInvitationPolicy = 
-                                            {
-                                                AllowMembersToInvite = msg.AllowMembersToInvite
-                                                AllowModeratorsToInvite = msg.AllowModeratorsToInvite
-                                                AllowOwnersToInvite = msg.AllowOwnersToInvite
-                                            }
+                        { document 
+                            with 
+                                Name = msg.Name 
+                                Position = envelope.AllStreamPosition }
+                | GroupInformationWasChanged msg ->
+                    let item = cache.GetCacheItem(key)
+                    let document = item.Value :?> GroupDocument
+                    item.Value <- 
+                        { document 
+                            with 
+                                Purpose = msg.Purpose
+                                Position = envelope.AllStreamPosition }
+                | GroupMembershipInvitationPolicyWasSet msg ->
+                    let item = cache.GetCacheItem(key)
+                    let document = item.Value :?> GroupDocument
+                    item.Value <- 
+                        { document 
+                            with 
+                                MembershipInvitationPolicy = 
+                                    {
+                                        AllowMembersToInvite = msg.AllowMembersToInvite
+                                        AllowModeratorsToInvite = msg.AllowModeratorsToInvite
+                                        AllowOwnersToInvite = msg.AllowOwnersToInvite
+                                    }
+                                Position = envelope.AllStreamPosition
                         }
                 | GroupModerationPolicyWasSet msg ->
-                    let item = cache.GetCacheItem(msg.GroupId.ToString("N"))
+                    let item = cache.GetCacheItem(key)
                     let document = item.Value :?> GroupDocument
                     item.Value <- 
-                        { document with ModerationPolicy = 
-                                            {
-                                                AllowPlatformGuestsToComment = (msg.AllowPlatformGuestsToComment.ToString())
-                                                AllowPlatformMembersToComment = (msg.AllowPlatformMembersToComment.ToString())
-                                                AllowGroupMembersToComment = (msg.AllowGroupMembersToComment.ToString())
-                                                AllowPlatformMembersToPost = (msg.AllowPlatformMembersToPost.ToString())
-                                                AllowGroupMembersToPost = (msg.AllowGroupMembersToPost.ToString())
-                                                RequireModerationAsOfLinkCount = msg.RequireModerationAsOfLinkCount
-                                                RequireModerationAsOfImageCount = msg.RequireModerationAsOfImageCount
-                                                RequireModerationAsOfMediaCount = msg.RequireModerationAsOfMediaCount
-                                            }
+                        { document
+                            with
+                                ModerationPolicy = 
+                                    {
+                                        AllowPlatformGuestsToComment = (msg.AllowPlatformGuestsToComment.ToString())
+                                        AllowPlatformMembersToComment = (msg.AllowPlatformMembersToComment.ToString())
+                                        AllowGroupMembersToComment = (msg.AllowGroupMembersToComment.ToString())
+                                        AllowPlatformMembersToPost = (msg.AllowPlatformMembersToPost.ToString())
+                                        AllowGroupMembersToPost = (msg.AllowGroupMembersToPost.ToString())
+                                        RequireModerationAsOfLinkCount = msg.RequireModerationAsOfLinkCount
+                                        RequireModerationAsOfImageCount = msg.RequireModerationAsOfImageCount
+                                        RequireModerationAsOfMediaCount = msg.RequireModerationAsOfMediaCount
+                                    }
+                                Position = envelope.AllStreamPosition
                         }
                 | GroupWasDeleted msg ->
-                    cache.Remove(msg.GroupId.ToString("N")) |> ignore
+                    cache.Remove(key) |> ignore
             | None -> ()
                 

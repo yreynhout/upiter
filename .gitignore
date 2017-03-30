@@ -12,6 +12,7 @@ bin
 scripts
 authentication.ini
 run.bat
+etag.md
 
 ### Linux ###
 *~
