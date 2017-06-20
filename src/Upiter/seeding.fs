@@ -87,7 +87,7 @@ namespace Upiter
                             Purpose = groupData.Item("Purpose").ToString()
                             PlatformMemberId = Guid.NewGuid()
                             TenantId = index % 3 
-                            When = clock.Now.Ticks
+                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                         }
                     store.AppendToStream(
                             groupId.ToString("N"),
@@ -107,7 +107,7 @@ namespace Upiter
                             Purpose = groupData.Item("Purpose").ToString()
                             PlatformMemberId = Guid.NewGuid()
                             TenantId = index % 5 
-                            When = clock.Now.Ticks
+                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                         }
                     store.AppendToStream(
                             groupId.ToString("N"),

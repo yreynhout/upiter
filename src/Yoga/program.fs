@@ -80,7 +80,7 @@ namespace Yoga
                 let storeSettings = MsSqlStreamStoreSettings(connectionString)
                 let store = new MsSqlStreamStore(storeSettings)
                 //yuck
-                store.CreateSchema(true, Async.DefaultCancellationToken)
+                store.CreateSchema(Async.DefaultCancellationToken)
                 |> Async.AwaitTask
                 |> Async.RunSynchronously
                 store :> IStreamStore

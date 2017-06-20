@@ -59,7 +59,7 @@ namespace Yoga
                                 if scheduler.State = States.Initial || scheduler.State = States.Stopped then
                                     let timer = 
                                         new Timer(
-                                            (fun _ -> mailbox.Post (PrivateCommand(TimerElapsed clock.Now))), 
+                                            (fun _ -> mailbox.Post (PrivateCommand(TimerElapsed (clock.GetCurrentInstant())))), 
                                             null, 
                                             frequency, 
                                             frequency)
@@ -77,7 +77,7 @@ namespace Yoga
                             | ScheduleTellOnce (action, due) ->
                                 log.Debug("Schedule a tell once action")
                                 if scheduler.State = States.Started then                                                                
-                                    let instant = clock.Now.Plus(Duration.FromMilliseconds(due))
+                                    let instant = clock.GetCurrentInstant().Plus(Duration.FromMilliseconds(due))
                                     return! loop { scheduler with ScheduledActions = Set.add { Id = Guid.NewGuid(); Tell = action; Due = instant; } scheduler.ScheduledActions }
                                 else
                                     return! loop scheduler                                

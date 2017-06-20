@@ -146,7 +146,7 @@ namespace Upiter.Model
                                             PlatformMemberId = cmd.PlatformMemberId
                                             Name = cmd.Name
                                             Purpose = cmd.Purpose
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -163,7 +163,7 @@ namespace Upiter.Model
                                             PlatformMemberId = cmd.PlatformMemberId
                                             Name = cmd.Name
                                             Purpose = cmd.Purpose
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -179,7 +179,7 @@ namespace Upiter.Model
                                             GroupId = cmd.GroupId
                                             PlatformMemberId = cmd.PlatformMemberId
                                             Name = cmd.Name
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -195,7 +195,7 @@ namespace Upiter.Model
                                             GroupId = cmd.GroupId
                                             PlatformMemberId = cmd.PlatformMemberId
                                             Purpose = cmd.Purpose
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -213,7 +213,7 @@ namespace Upiter.Model
                                             AllowMembersToInvite = cmd.AllowMembersToInvite
                                             AllowModeratorsToInvite = cmd.AllowModeratorsToInvite
                                             AllowOwnersToInvite = cmd.AllowOwnersToInvite
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -236,7 +236,7 @@ namespace Upiter.Model
                                             RequireModerationAsOfLinkCount = cmd.RequireModerationAsOfLinkCount
                                             RequireModerationAsOfImageCount = cmd.RequireModerationAsOfImageCount
                                             RequireModerationAsOfMediaCount = cmd.RequireModerationAsOfMediaCount
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
@@ -251,7 +251,7 @@ namespace Upiter.Model
                                             TenantId = cmd.TenantId
                                             GroupId = cmd.GroupId
                                             PlatformMemberId = cmd.PlatformMemberId
-                                            When = clock.Now.Ticks
+                                            When = clock.GetCurrentInstant().ToUnixTimeTicks()
                                         }
                                 |]
                             else
